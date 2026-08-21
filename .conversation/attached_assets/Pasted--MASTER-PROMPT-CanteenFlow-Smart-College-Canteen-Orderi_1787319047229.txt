@@ -1,0 +1,1267 @@
+# 🚀 MASTER PROMPT: CanteenFlow - Smart College Canteen Ordering System
+
+## 🎯 PRIMARY OBJECTIVE
+
+Build a **production-ready frontend prototype** for **CanteenFlow**, a modern college canteen ordering platform that enables students to browse food, place orders, select pickup times, and track their orders - all without calling or visiting the canteen.
+
+---
+
+## 👤 USER PERSONAS
+
+### Primary Persona: The Hostel Student
+- **Name:** Vishnu (Typical User)
+- **Age:** 18-22
+- **Pain Points:** 
+  - Long queues during lunch/dinner hours
+  - Phone lines always busy
+  - Wastes 20-30 minutes waiting in line
+  - Limited time between classes
+  - Craves quick, reliable food ordering
+- **Goals:**
+  - Order food in under 1 minute
+  - Know exactly when food will be ready
+  - Skip the queue entirely
+  - Get notifications when food is ready
+- **Tech Comfort:** High - uses mobile apps daily
+
+### Secondary Persona: Canteen Owner/Admin
+- **Name:** Mr. Sharma
+- **Pain Points:**
+  - Manual order management
+  - No visibility into peak hours
+  - Overwhelmed during rush times
+  - Difficulty managing inventory
+  - Can't analyze sales trends
+- **Goals:**
+  - Streamline order management
+  - Know what's selling best
+  - Manage time slots efficiently
+  - Reduce chaos during peak hours
+  - Improve student satisfaction
+
+---
+
+## 🎨 VISUAL DESIGN SYSTEM
+
+### Color Palette (Warm & Energetic)
+```
+Primary Colors:
+- Primary Orange: #FF6B35 (CTA buttons, accents)
+- Primary Deep: #2D1B0E (Text, headers)
+- Secondary Warm: #FFB703 (Highlights, badges)
+- Accent Red: #E63946 (Veg/Non-veg indicators)
+
+Background Colors:
+- Light Cream: #FFFBF5 (Page background)
+- Pure White: #FFFFFF (Cards, containers)
+- Subtle Gray: #F8F6F3 (Sections)
+
+Semantic Colors:
+- Success Green: #2EC4B6
+- Warning Yellow: #FFB703
+- Error Red: #E63946
+- Info Blue: #4A90D9
+```
+
+### Typography System
+```
+Headings: 'Poppins' or 'Inter' (Sans-serif)
+- H1: 48px/56px (Hero heading)
+- H2: 32px/40px (Section titles)
+- H3: 24px/32px (Card titles)
+- H4: 20px/28px (Subheadings)
+
+Body: 'Inter' or 'Poppins' 
+- Body Large: 16px/24px
+- Body Regular: 14px/20px
+- Body Small: 12px/16px
+
+Font Weights:
+- Bold: 700
+- Semibold: 600
+- Medium: 500
+- Regular: 400
+```
+
+### Spacing System
+```
+Base unit: 4px
+- xs: 4px
+- sm: 8px
+- md: 16px
+- lg: 24px
+- xl: 32px
+- 2xl: 48px
+- 3xl: 64px
+- 4xl: 80px
+```
+
+### Border Radius
+```
+- Cards: 16px
+- Buttons: 12px
+- Inputs: 10px
+- Badges: 20px
+- Images: 12px
+- Modals: 20px
+```
+
+---
+
+## 📱 RESPONSIVE BREAKPOINTS
+
+```
+- Mobile: 320px - 767px (Primary focus)
+- Tablet: 768px - 1023px
+- Desktop: 1024px - 1279px
+- Large Desktop: 1280px+
+```
+
+---
+
+## 🧩 COMPONENT SPECIFICATIONS
+
+### 1. Navbar Component
+```typescript
+interface NavbarProps {
+  activePage: 'home' | 'menu' | 'orders' | 'about';
+  cartCount: number;
+  user: User | null;
+  onLogin: () => void;
+  onLogout: () => void;
+}
+```
+**Specifications:**
+- Fixed position on scroll
+- Glass morphism effect on scroll (blurred background)
+- Desktop: Horizontal navigation with icons
+- Mobile: Hidden (replaced by bottom nav)
+- Cart counter badge with animation
+- Profile dropdown menu
+- Smooth scroll to sections
+
+### 2. Mobile Bottom Navigation
+```typescript
+interface MobileNavProps {
+  activeTab: 'home' | 'menu' | 'cart' | 'orders' | 'profile';
+  onTabChange: (tab: string) => void;
+}
+```
+**Specifications:**
+- Fixed at bottom on mobile
+- 5 tabs with icons and labels
+- Active tab with highlight and icon color change
+- Animated indicator line
+- Touch feedback on tap
+- Safe area padding for modern phones
+
+### 3. Food Card Component
+```typescript
+interface FoodCardProps {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
+  isVeg: boolean;
+  rating: number;
+  isAvailable: boolean;
+  isPopular?: boolean;
+  onAddToCart: (id: string) => void;
+  onViewDetails?: (id: string) => void;
+}
+```
+**Specifications:**
+- Image with aspect ratio 4:3
+- Loading skeleton state
+- Veg/Non-veg badge
+- Popular badge (🔥)
+- Rating stars
+- Price with ₹ symbol
+- Quantity counter after adding
+- Add to cart button animation
+- Sold out overlay (disabled state)
+- Hover: Scale 1.02, Shadow elevation
+- Tap feedback on mobile
+
+### 4. Cart Item Component
+```typescript
+interface CartItemProps {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  onIncrement: (id: string) => void;
+  onDecrement: (id: string) => void;
+  onRemove: (id: string) => void;
+}
+```
+**Specifications:**
+- Horizontal layout with image thumbnail
+- Quantity selector with +/- buttons
+- Total price calculation
+- Remove button (trash icon)
+- Smooth delete animation
+- Swipe to remove on mobile
+
+### 5. Time Slot Card
+```typescript
+interface TimeSlotCardProps {
+  id: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  booked: number;
+  isAvailable: boolean;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+}
+```
+**Specifications:**
+- Time range display
+- Capacity progress bar
+- Available spots count
+- Select/Selected status
+- "Full" state with disabled styling
+- Pulse animation if slot is filling fast
+- Instant selection feedback
+
+### 6. Order Status Timeline
+```typescript
+interface OrderStatusTimelineProps {
+  status: 'placed' | 'accepted' | 'preparing' | 'ready' | 'completed';
+  estimatedTime?: string;
+  onShowQR?: () => void;
+}
+```
+**Specifications:**
+- Step indicator with icons
+- Completed steps: Green checkmark
+- Active step: Pulsing dot
+- Pending steps: Gray circle
+- Estimated time display
+- QR Code button when ready
+- Animated progress line
+
+---
+
+## 📄 PAGE SPECIFICATIONS
+
+### Page 1: Landing Page
+
+#### Hero Section
+```typescript
+// Copy
+HEADING: "Skip the Queue.\nOrder Smart.\nEat Fresh."
+SUBTITLE: "Order your favorite food from your college canteen, choose your pickup time, and collect your food without waiting in long queues."
+
+// Buttons
+PRIMARY: "🍔 Order Food" → Navigates to Menu
+SECONDARY: "📋 View Menu" → Scrolls to Menu section
+```
+
+**Technical Requirements:**
+- Full viewport height
+- Animated background pattern or gradient
+- Floating food illustrations with parallax
+- Typewriter effect or staggered text reveal
+- Subtle particle system or floating elements
+- CTA button pulse animation
+
+#### Problem vs Solution Section
+```typescript
+OLD_WAY: [
+  "📞 Call the Canteen",
+  "📵 Phone Busy",
+  "⏰ Wait",
+  "😓 Long Queue"
+]
+
+NEW_WAY: [
+  "📱 Browse Food",
+  "🛒 Order Online",
+  "⏰ Choose Pickup Time",
+  "✅ Collect Food"
+]
+```
+**Technical Requirements:**
+- Side-by-side comparison or animated transition
+- Icons with labels
+- Cross/checkmark indicators
+- Arrow flow between steps
+- Animated from left/right
+
+#### How It Works (4 Steps)
+```typescript
+STEPS: [
+  {
+    icon: "🔍",
+    title: "Browse",
+    description: "Explore today's available food"
+  },
+  {
+    icon: "🛒",
+    title: "Add to Cart",
+    description: "Select your favorite items"
+  },
+  {
+    icon: "⏰",
+    title: "Choose Time",
+    description: "Select your preferred pickup slot"
+  },
+  {
+    icon: "🎟️",
+    title: "Collect",
+    description: "Show your QR or token and collect"
+  }
+]
+```
+**Technical Requirements:**
+- Numbered or icon-based steps
+- Animated on scroll (reveal)
+- Connecting lines between steps
+- Hover effect on each step
+- Mobile: Vertical layout
+- Desktop: Horizontal layout
+
+#### Features Section (6 Features)
+```typescript
+FEATURES: [
+  { icon: "🚫", title: "No Phone Calls", description: "Order directly from your phone" },
+  { icon: "⏰", title: "Smart Pickup Slots", description: "Choose when to collect your food" },
+  { icon: "📱", title: "Easy Ordering", description: "Simple interface designed for students" },
+  { icon: "🔔", title: "Live Order Updates", description: "Get notified when your food is ready" },
+  { icon: "🎟️", title: "Digital Token", description: "QR-based pickup verification" },
+  { icon: "🍔", title: "Daily Specials", description: "New specials every day" }
+]
+```
+**Technical Requirements:**
+- Grid layout (3x2 on desktop, 2x3 on mobile)
+- Icon with gradient background
+- Card with hover effect
+- Consistent sizing
+
+#### CTA Section
+```typescript
+COPY: "Hungry? Your food is just a few clicks away."
+BUTTON: "Order Food Now →"
+```
+**Technical Requirements:**
+- Large, centered section
+- Gradient or pattern background
+- Button with arrow icon
+- Hover animation (shake, scale, or glow)
+
+---
+
+### Page 2: Food Menu Page
+
+#### Header
+```typescript
+GREETING: "Good Afternoon 👋" // Dynamic based on time
+SUBTITLE: "What are you craving today?"
+```
+
+#### Search Bar
+```typescript
+PLACEHOLDER: "🔍 Search your favorite food..."
+```
+**Technical Requirements:**
+- Debounced search (300ms)
+- Live filtering
+- Clear button
+- Focus animation
+
+#### Category Filters
+```typescript
+CATEGORIES: ["All", "Breakfast", "Lunch", "Snacks", "Beverages", "Specials"]
+ADDITIONAL_FILTERS: ["🌱 Veg", "🍗 Non-Veg", "Available", "🔥 Popular"]
+```
+**Technical Requirements:**
+- Horizontal scrollable chips
+- Active state with highlight
+- Smooth scroll with buttons
+- Count badges for each category
+
+#### Food Grid
+**Technical Requirements:**
+- Grid layout with responsive columns
+  - Mobile: 1 column
+  - Tablet: 2 columns
+  - Desktop: 3-4 columns
+- Infinite scroll or load more
+- Skeleton loading state
+- Empty state if no results
+
+---
+
+### Page 3: Shopping Cart
+
+#### Cart Items List
+**Technical Requirements:**
+- Grouped by restaurant or category
+- Item with image, name, price
+- Quantity selector
+- Remove button
+- Swipe to delete (mobile)
+
+#### Order Summary
+```typescript
+SUMMARY: {
+  subtotal: number,
+  tax: number,
+  deliveryFee: number,
+  discount: number,
+  total: number
+}
+```
+**Technical Requirements:**
+- Breakdown with labels
+- Total highlighted
+- Promo code input (optional)
+- Sticky on scroll
+
+#### Checkout Button
+**Technical Requirements:**
+- Sticky on mobile (bottom)
+- Animated progress
+- Disabled if cart is empty
+- Shows item count
+
+---
+
+### Page 4: Checkout & Time Slot
+
+#### Progress Indicator
+```typescript
+STEPS: [
+  { label: "Cart", icon: "🛒" },
+  { label: "Pickup Time", icon: "⏰" },
+  { label: "Payment", icon: "💳" }
+]
+```
+**Technical Requirements:**
+- Step indicators with icons
+- Active step highlighted
+- Clickable to navigate back
+- Animated transitions
+
+#### Time Slots
+**Technical Requirements:**
+- Card-based selection
+- Capacity progress bar
+- "Full" slots disabled
+- Selected state with checkmark
+- Countdown to next slot
+
+#### Countdown Timer
+```typescript
+BANNER: "⏰ Lunch orders close in:"
+TIMER: "00 : 42 : 15"
+```
+**Technical Requirements:**
+- Real-time countdown
+- Warning color when < 5 minutes
+- Expired state with message
+
+---
+
+### Page 5: Payment UI
+
+#### Payment Methods
+```typescript
+METHODS: [
+  {
+    id: "upi",
+    label: "UPI",
+    options: ["Google Pay", "PhonePe", "Paytm"]
+  },
+  {
+    id: "cash",
+    label: "Cash on Pickup",
+    options: []
+  }
+]
+```
+**Technical Requirements:**
+- Radio selection
+- UPI with sub-options
+- Visual card design
+- Selected state with border color
+- Order summary sidebar (desktop)
+
+#### Place Order
+**Technical Requirements:**
+- Animated button
+- Loading state
+- Success animation
+- Error simulation (optional)
+
+---
+
+### Page 6: Order Success
+
+#### Success Content
+```typescript
+ORDER: {
+  id: "#CF1024",
+  token: "A15",
+  pickupTime: "1:00 PM – 1:15 PM",
+  items: [
+    { name: "Chicken Fried Rice", quantity: 2 }
+  ]
+}
+```
+**Technical Requirements:**
+- Confetti or success animation
+- QR Code generation
+- Order details with icons
+- Action buttons
+- Share option
+
+---
+
+### Page 7: My Orders
+
+#### Tabs
+```typescript
+TABS: ["Active Orders", "Order History"]
+```
+
+#### Order Card
+```typescript
+ORDER_CARD: {
+  id: "#CF1024",
+  items: ["Chicken Fried Rice × 2"],
+  pickupTime: "1:00 PM – 1:15 PM",
+  status: "preparing", // placed | accepted | preparing | ready | completed
+  total: 180
+}
+```
+**Technical Requirements:**
+- Status badge with color
+- Expandable for details
+- Reorder button
+- Track button
+
+---
+
+### Page 8: Order Tracking
+
+#### Timeline
+```typescript
+STEPS: [
+  { status: "placed", label: "Order Placed", done: true },
+  { status: "accepted", label: "Order Accepted", done: true },
+  { status: "preparing", label: "Preparing", done: false },
+  { status: "ready", label: "Ready for Pickup", done: false },
+  { status: "completed", label: "Completed", done: false }
+]
+```
+**Technical Requirements:**
+- Visual timeline
+- Animated progress
+- Estimated time
+- QR code when ready
+
+---
+
+### Page 9: Notifications
+
+#### Notification Items
+```typescript
+NOTIFICATIONS: [
+  {
+    id: "1",
+    type: "order_accepted",
+    title: "Order Accepted",
+    message: "Your order has been accepted.",
+    time: "10 minutes ago",
+    read: false
+  },
+  {
+    id: "2",
+    type: "order_ready",
+    title: "Food Ready!",
+    message: "Your Chicken Fried Rice is ready!",
+    time: "Just now",
+    read: false
+  }
+]
+```
+**Technical Requirements:**
+- Unread indicator
+- Mark all as read button
+- Empty state
+- Time grouping
+
+---
+
+### Page 10: Student Profile
+
+#### Profile Header
+```typescript
+USER: {
+  name: "Vishnu",
+  registerNumber: "2024CS101",
+  department: "Computer Science",
+  year: "2nd Year",
+  isHostel: true,
+  avatar: "👤"
+}
+```
+
+#### Settings Options
+```typescript
+OPTIONS: [
+  { icon: "✏️", label: "Edit Profile", href: "/profile/edit" },
+  { icon: "📦", label: "Order History", href: "/orders" },
+  { icon: "🔔", label: "Notifications", href: "/notifications" },
+  { icon: "❓", label: "Help & Support", href: "/help" },
+  { icon: "🚪", label: "Logout", href: "#" }
+]
+```
+**Technical Requirements:**
+- Avatar with initials
+- Details in card
+- List of settings
+- Logout confirmation
+
+---
+
+### Page 11: Admin Dashboard
+
+#### Stats Cards
+```typescript
+STATS: [
+  { label: "Today's Orders", value: 127, icon: "📦", change: "+12%" },
+  { label: "Revenue", value: "₹8,450", icon: "💰", change: "+8%" },
+  { label: "Preparing", value: 12, icon: "👨‍🍳", change: "-3%" },
+  { label: "Ready", value: 8, icon: "✅", change: "+5%" }
+]
+```
+
+#### Live Canteen Flow Widget
+```typescript
+LIVE_STATUS: {
+  status: "OPEN",
+  ordersToday: 127,
+  preparing: 12,
+  ready: 8,
+  nextSlot: "1:15 PM – 1:30 PM",
+  spotsAvailable: 14
+}
+```
+**Technical Requirements:**
+- Pulse animation for LIVE indicator
+- Real-time updating feel
+- Color-coded status
+
+#### Sales Chart
+**Technical Requirements:**
+- Recharts integration
+- Responsive chart
+- Tooltip on hover
+- Area chart with gradient
+
+---
+
+### Page 12: Food Management (Admin)
+
+#### Header
+```typescript
+HEADER: "Food Management"
+SUBTITLE: "Manage today's menu and food availability."
+BUTTON: "+ Add New Food"
+```
+
+#### Food Table/Grid
+```typescript
+FOOD_ITEM: {
+  id: "1",
+  name: "Chicken Biryani",
+  category: "Lunch",
+  price: 120,
+  available: 8,
+  status: "available", // available | sold_out
+  isVeg: false,
+  image: "biryani.jpg"
+}
+```
+**Technical Requirements:**
+- Image thumbnail
+- Status toggle
+- Edit/Delete actions
+- Search and filter
+
+#### Add/Edit Modal
+```typescript
+FIELDS: [
+  { name: "Food Name", type: "text", required: true },
+  { name: "Description", type: "textarea" },
+  { name: "Category", type: "select", options: ["Breakfast", "Lunch", "Snacks", "Beverages", "Specials"] },
+  { name: "Price", type: "number", required: true },
+  { name: "Food Type", type: "select", options: ["Veg", "Non-Veg"] },
+  { name: "Available Quantity", type: "number" },
+  { name: "Image", type: "file" },
+  { name: "Available", type: "toggle" }
+]
+```
+
+---
+
+### Page 13: Order Management (Admin)
+
+#### Filters
+```typescript
+FILTERS: ["All Orders", "New", "Preparing", "Ready", "Completed"]
+SEARCH: "🔍 Search Order ID or Student"
+```
+
+#### Order Card/Table
+```typescript
+ORDER: {
+  id: "#CF1024",
+  student: "Vishnu",
+  items: ["Chicken Fried Rice × 2"],
+  pickupTime: "1:00 PM",
+  paymentStatus: "PAID",
+  orderStatus: "preparing"
+}
+```
+**Technical Requirements:**
+- Status badge
+- Payment indicator
+- View order modal
+- Status update buttons
+
+#### Order Detail Modal
+**Technical Requirements:**
+- Complete order details
+- Status update buttons
+- Timeline view
+- Contact student option
+
+---
+
+### Page 14: Time Slot Management (Admin)
+
+#### Slot Cards
+```typescript
+SLOT: {
+  id: "1",
+  startTime: "12:00 PM",
+  endTime: "12:15 PM",
+  booked: 18,
+  capacity: 20,
+  isActive: true
+}
+```
+**Technical Requirements:**
+- Progress bar
+- Status toggle
+- Edit/Delete actions
+- Add slot button
+
+#### Add/Edit Modal
+```typescript
+FIELDS: [
+  { name: "Start Time", type: "time" },
+  { name: "End Time", type: "time" },
+  { name: "Capacity", type: "number" },
+  { name: "Active", type: "toggle" }
+]
+```
+
+---
+
+### Page 15: Analytics (Admin)
+
+#### Metrics
+```typescript
+METRICS: [
+  { label: "Revenue", value: "₹84,500", change: "+12%" },
+  { label: "Total Orders", value: "1,247", change: "+8%" },
+  { label: "Average Order Value", value: "₹67", change: "+5%" },
+  { label: "Most Popular", value: "Chicken Fried Rice", change: "+15%" }
+]
+```
+
+#### Charts
+**Technical Requirements:**
+- Daily Sales: Area chart
+- Orders Per Hour: Bar chart
+- Popular Food Items: Horizontal bar
+- Weekly Revenue: Line chart
+
+---
+
+### Page 16: Feedback (Admin)
+
+#### Feedback Cards
+```typescript
+FEEDBACK: {
+  id: "1",
+  food: "Chicken Fried Rice",
+  rating: 5,
+  comment: "Very tasty and fresh!",
+  student: "Student",
+  time: "2 hours ago"
+}
+```
+**Technical Requirements:**
+- Star ratings
+- Filter by rating
+- Average rating display
+- Response option
+
+---
+
+### Page 17: QR Scanner UI (Admin)
+
+#### Scanner Interface
+**Technical Requirements:**
+- Camera viewport placeholder
+- Scanning animation
+- Reticle or frame
+- Flash toggle
+- Cancel button
+
+#### Verification Result
+```typescript
+RESULT: {
+  orderId: "#CF1024",
+  token: "A15",
+  verified: true
+}
+```
+**Technical Requirements:**
+- Success animation
+- Order details
+- Complete button
+- Error state
+
+---
+
+## 🛠️ TECHNICAL IMPLEMENTATION
+
+### Project Structure
+```
+canteenflow/
+├── src/
+│   ├── components/
+│   │   ├── common/
+│   │   │   ├── Button.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Badge.tsx
+│   │   │   ├── Skeleton.tsx
+│   │   │   ├── EmptyState.tsx
+│   │   │   └── Toast.tsx
+│   │   ├── student/
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── MobileBottomNav.tsx
+│   │   │   ├── FoodCard.tsx
+│   │   │   ├── FoodGrid.tsx
+│   │   │   ├── CategoryFilter.tsx
+│   │   │   ├── SearchBar.tsx
+│   │   │   ├── CartItem.tsx
+│   │   │   ├── CartSummary.tsx
+│   │   │   ├── QuantitySelector.tsx
+│   │   │   ├── TimeSlotCard.tsx
+│   │   │   ├── OrderCard.tsx
+│   │   │   ├── OrderStatusTimeline.tsx
+│   │   │   ├── NotificationItem.tsx
+│   │   │   └── ProfileSettings.tsx
+│   │   └── admin/
+│   │       ├── AdminSidebar.tsx
+│   │       ├── StatCard.tsx
+│   │       ├── LiveWidget.tsx
+│   │       ├── ChartCard.tsx
+│   │       ├── FoodTable.tsx
+│   │       ├── FoodFormModal.tsx
+│   │       ├── OrderTable.tsx
+│   │       ├── OrderDetailsModal.tsx
+│   │       ├── SlotCard.tsx
+│   │       ├── SlotFormModal.tsx
+│   │       ├── FeedbackCard.tsx
+│   │       └── QRScanner.tsx
+│   ├── pages/
+│   │   ├── student/
+│   │   │   ├── LandingPage.tsx
+│   │   │   ├── MenuPage.tsx
+│   │   │   ├── CartPage.tsx
+│   │   │   ├── CheckoutPage.tsx
+│   │   │   ├── PaymentPage.tsx
+│   │   │   ├── OrderSuccessPage.tsx
+│   │   │   ├── MyOrdersPage.tsx
+│   │   │   ├── OrderTrackingPage.tsx
+│   │   │   ├── NotificationsPage.tsx
+│   │   │   └── ProfilePage.tsx
+│   │   └── admin/
+│   │       ├── AdminDashboardPage.tsx
+│   │       ├── FoodManagementPage.tsx
+│   │       ├── OrderManagementPage.tsx
+│   │       ├── TimeSlotManagementPage.tsx
+│   │       ├── AnalyticsPage.tsx
+│   │       ├── FeedbackPage.tsx
+│   │       └── QRScannerPage.tsx
+│   ├── layouts/
+│   │   ├── StudentLayout.tsx
+│   │   └── AdminLayout.tsx
+│   ├── context/
+│   │   ├── CartContext.tsx
+│   │   ├── OrderContext.tsx
+│   │   ├── NotificationContext.tsx
+│   │   └── ThemeContext.tsx
+│   ├── hooks/
+│   │   ├── useCart.ts
+│   │   ├── useOrders.ts
+│   │   ├── useNotifications.ts
+│   │   ├── useSearch.ts
+│   │   ├── useFilters.ts
+│   │   └── useLocalStorage.ts
+│   ├── data/
+│   │   ├── mockData.ts
+│   │   ├── foodData.ts
+│   │   ├── orderData.ts
+│   │   ├── userData.ts
+│   │   ├── notificationData.ts
+│   │   ├── slotData.ts
+│   │   └── analyticsData.ts
+│   ├── types/
+│   │   ├── food.types.ts
+│   │   ├── order.types.ts
+│   │   ├── user.types.ts
+│   │   ├── cart.types.ts
+│   │   ├── slot.types.ts
+│   │   └── notification.types.ts
+│   ├── utils/
+│   │   ├── helpers.ts
+│   │   ├── constants.ts
+│   │   ├── formatters.ts
+│   │   ├── validators.ts
+│   │   └── animations.ts
+│   ├── assets/
+│   │   ├── images/
+│   │   ├── icons/
+│   │   └── fonts/
+│   ├── styles/
+│   │   ├── globals.css
+│   │   └── tailwind.css
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── routes.tsx
+├── public/
+│   └── index.html
+├── package.json
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+└── README.md
+```
+
+### State Management
+
+#### Cart Context
+```typescript
+interface CartContextType {
+  items: CartItem[];
+  addItem: (item: FoodItem) => void;
+  removeItem: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+  clearCart: () => void;
+  totalItems: number;
+  subtotal: number;
+  total: number;
+}
+```
+
+#### Order Context
+```typescript
+interface OrderContextType {
+  orders: Order[];
+  activeOrders: Order[];
+  orderHistory: Order[];
+  placeOrder: (order: Order) => void;
+  updateOrderStatus: (id: string, status: OrderStatus) => void;
+  getOrderById: (id: string) => Order | undefined;
+}
+```
+
+#### Notification Context
+```typescript
+interface NotificationContextType {
+  notifications: Notification[];
+  unreadCount: number;
+  addNotification: (notification: Notification) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  clearAll: () => void;
+}
+```
+
+### Custom Hooks
+
+#### useCart
+```typescript
+const useCart = () => {
+  const [items, setItems] = useState<CartItem[]>([]);
+  
+  const addItem = useCallback((food: FoodItem) => {
+    setItems(prev => {
+      const existing = prev.find(item => item.id === food.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === food.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { ...food, quantity: 1 }];
+    });
+  }, []);
+
+  // ... other methods
+
+  return { items, addItem, removeItem, updateQuantity, clearCart, totalItems, subtotal, total };
+};
+```
+
+#### useOrders
+```typescript
+const useOrders = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  
+  const placeOrder = useCallback((order: Order) => {
+    setOrders(prev => [order, ...prev]);
+    // Save to localStorage
+  }, []);
+
+  // ... other methods
+
+  return { orders, activeOrders, orderHistory, placeOrder, updateOrderStatus, getOrderById };
+};
+```
+
+### Mock Data Structure
+
+```typescript
+// types/food.types.ts
+export interface FoodItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: 'breakfast' | 'lunch' | 'snacks' | 'beverages' | 'specials';
+  image: string;
+  isVeg: boolean;
+  rating: number;
+  ratingCount: number;
+  isAvailable: boolean;
+  isPopular: boolean;
+  preparationTime: number; // in minutes
+}
+
+// data/foodData.ts
+export const FOOD_ITEMS: FoodItem[] = [
+  {
+    id: '1',
+    name: 'Chicken Fried Rice',
+    description: 'Spicy and delicious fried rice with chicken',
+    price: 90,
+    category: 'lunch',
+    image: '/images/food/chicken-fried-rice.jpg',
+    isVeg: false,
+    rating: 4.5,
+    ratingCount: 128,
+    isAvailable: true,
+    isPopular: true,
+    preparationTime: 15
+  },
+  // ... more items
+];
+
+// types/order.types.ts
+export interface Order {
+  id: string;
+  items: CartItem[];
+  total: number;
+  status: OrderStatus;
+  pickupTime: string;
+  pickupToken: string;
+  paymentMethod: 'upi' | 'cash';
+  createdAt: string;
+  student: {
+    name: string;
+    registerNumber: string;
+  };
+}
+
+export type OrderStatus = 'placed' | 'accepted' | 'preparing' | 'ready' | 'completed';
+```
+
+### LocalStorage Keys
+```typescript
+const STORAGE_KEYS = {
+  CART: 'canteenflow_cart',
+  ORDERS: 'canteenflow_orders',
+  NOTIFICATIONS: 'canteenflow_notifications',
+  USER: 'canteenflow_user',
+  THEME: 'canteenflow_theme'
+};
+```
+
+---
+
+## 🎯 KEY INTERACTIONS
+
+### Order Flow (Student)
+1. User opens landing page
+2. Clicks "Order Food" → Menu page
+3. Browses food, applies filters
+4. Adds items to cart (with animation)
+5. Clicks cart icon → Cart page
+6. Reviews items, updates quantities
+7. Clicks "Proceed to Checkout"
+8. Selects pickup time slot
+9. Selects payment method
+10. Clicks "Place Order"
+11. Success page with QR code
+
+### Admin Flow
+1. User logs in as admin
+2. Sees dashboard with stats
+3. Manages food items (add/edit/delete)
+4. Views orders, updates status
+5. Manages time slots
+6. Views analytics
+7. Scans QR codes for verification
+
+---
+
+## 🎨 ANIMATION SPECIFICATIONS
+
+### Page Transitions
+```typescript
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+};
+
+const pageTransition = {
+  duration: 0.3,
+  ease: "easeInOut"
+};
+```
+
+### Card Hover
+```typescript
+const cardHover = {
+  scale: 1.02,
+  boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+  transition: { duration: 0.2 }
+};
+```
+
+### Add to Cart Animation
+```typescript
+const addToCartAnimation = {
+  scale: [1, 1.2, 1],
+  transition: { duration: 0.3 }
+};
+```
+
+### Success Animation
+```typescript
+const successAnimation = {
+  scale: [0, 1.2, 1],
+  opacity: [0, 1, 1],
+  transition: { duration: 0.5, ease: "easeOut" }
+};
+```
+
+### Pulse Animation
+```typescript
+const pulseAnimation = {
+  scale: [1, 1.05, 1],
+  opacity: [1, 0.8, 1],
+  transition: { duration: 2, repeat: Infinity }
+};
+```
+
+---
+
+## 📱 RESPONSIVE REQUIREMENTS
+
+### Mobile-First Approach
+- All components designed for mobile first
+- Bottom navigation for easy reach
+- Touch-friendly targets (minimum 44px)
+- Swipe gestures for actions
+- Sticky elements for convenience
+
+### Tablet Optimization
+- 2-column grid for food items
+- Side-by-side layout for cart
+- Larger touch targets
+- Split view for checkout
+
+### Desktop Experience
+- Full horizontal navigation
+- 3-4 column grid
+- Sidebar for admin
+- Hover effects
+- Keyboard shortcuts
+- Multi-pane views
+
+---
+
+## 🧪 TESTING SCENARIOS
+
+### Student User Journey
+1. ✅ Land on homepage
+2. ✅ View hero section with animations
+3. ✅ Scroll through features
+4. ✅ Click "Order Food" → Menu
+5. ✅ See greeting with time
+6. ✅ Search for "Chicken"
+7. ✅ Filter by "Lunch"
+8. ✅ Add item to cart
+9. ✅ See cart count update
+10. ✅ Click cart → Cart page
+11. ✅ Update quantity
+12. ✅ Remove item
+13. ✅ Proceed to checkout
+14. ✅ Select time slot
+15. ✅ Select payment
+16. ✅ Place order
+17. ✅ See success page with QR
+18. ✅ View order in "My Orders"
+19. ✅ Track order status
+20. ✅ Receive notification
+
+### Admin User Journey
+1. ✅ Login to admin
+2. ✅ View dashboard stats
+3. ✅ See live widget
+4. ✅ View sales chart
+5. ✅ Go to Food Management
+6. ✅ Add new food item
+7. ✅ Edit existing item
+8. ✅ Toggle availability
+9. ✅ Go to Order Management
+10. ✅ Filter orders
+11. ✅ Update order status
+12. ✅ View order details
+13. ✅ Go to Time Slot Management
+14. ✅ Add new slot
+15. ✅ Edit slot capacity
+16. ✅ Toggle slot active
+17. ✅ Go to Analytics
+18. ✅ View all charts
+19. ✅ Go

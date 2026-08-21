@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: menu
+    description: Canteen menu and pickup slots
+  - name: orders
+    description: Student orders and tracking
+  - name: notifications
+    description: Order notifications
 paths:
   /healthz:
     get:
@@ -24,6 +30,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /menu:
+    get:
+      operationId: getMenu
+      tags: [menu]
+      summary: Get today's menu
+      responses:
+        "200":
+          description: Available food items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodItem"
+  /pickup-slots:
+    get:
+      operationId: getPickupSlots
+      tags: [menu]
+      summary: Get pickup time slots
+      responses:
+        "200":
+          description: Pickup slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PickupSlot"
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [orders]
+      summary: Get current student's orders
+      responses:
+        "200":
+          description: Student orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place a canteen order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get one order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get current student's notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+  /notifications/read-all:
+    post:
+      operationId: markNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: Updated notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +146,73 @@ components:
           type: string
       required:
         - status
+    FoodItem:
+      type: object
+      required: [id, name, description, price, category, image, isVeg, rating, ratingCount, isAvailable, isPopular, preparationTime]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        price: { type: number }
+        category: { type: string }
+        image: { type: string }
+        isVeg: { type: boolean }
+        rating: { type: number }
+        ratingCount: { type: number }
+        isAvailable: { type: boolean }
+        isPopular: { type: boolean }
+        preparationTime: { type: number }
+    PickupSlot:
+      type: object
+      required: [id, startTime, endTime, capacity, booked, isAvailable]
+      properties:
+        id: { type: string }
+        startTime: { type: string }
+        endTime: { type: string }
+        capacity: { type: number }
+        booked: { type: number }
+        isAvailable: { type: boolean }
+    OrderItem:
+      type: object
+      required: [id, name, price, quantity, image]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        price: { type: number }
+        quantity: { type: number }
+        image: { type: string }
+    Order:
+      type: object
+      required: [id, items, total, status, pickupTime, pickupToken, placedAt]
+      properties:
+        id: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+        total: { type: number }
+        status:
+          type: string
+          enum: [placed, accepted, preparing, ready, completed]
+        pickupTime: { type: string }
+        pickupToken: { type: string }
+        placedAt: { type: string }
+    OrderInput:
+      type: object
+      required: [items, pickupSlotId, paymentMethod]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+        pickupSlotId: { type: string }
+        paymentMethod: { type: string, enum: [upi, cash] }
+    Notification:
+      type: object
+      required: [id, type, title, message, time, read]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        title: { type: string }
+        message: { type: string }
+        time: { type: string }
+        read: { type: boolean }
 

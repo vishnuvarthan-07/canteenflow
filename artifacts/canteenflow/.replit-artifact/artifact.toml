@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CanteenFlow"
+description = "A warm, fast college canteen ordering app for students to browse meals, choose pickup times, place orders, and track them without waiting in line."
+version = "1.0.0"
+id = "artifacts/canteenflow"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21192
+
+[services.development]
+run = "pnpm --filter @workspace/canteenflow run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/canteenflow", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/canteenflow/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21192"
+BASE_PATH = "/"
