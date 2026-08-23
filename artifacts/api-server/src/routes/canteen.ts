@@ -154,15 +154,15 @@ const notifications = [
 
 const router: IRouter = Router();
 
-router.get("/menu", (_req, res) => res.json(food));
-router.get("/pickup-slots", (_req, res) => res.json(slots));
-router.get("/orders", (_req, res) => res.json(orders));
-router.get("/orders/:orderId", (req, res) => {
-  const order = orders.find((item) => item.id === req.params.orderId);
-  if (!order) return res.status(404).json({ error: "Order not found" });
-  return res.json(order);
+router.get("/menu", (_req: any, res: any) => res.json(food));
+router.get("/pickup-slots", (_req: any, res: any) => res.json(slots));
+router.get("/orders", (_req: any, res: any) => res.json(orders));
+router.get("/orders/:orderId", (req: any, res: any) => {
+  const order = orders.find((o) => o.id === req.params.orderId);
+  if (!order) return res.status(404).json({ message: "Not found" });
+  res.json(order);
 });
-router.post("/orders", (req, res) => {
+router.post("/orders", (req: any, res: any) => {
   const input = req.body as { items?: OrderItem[]; pickupSlotId?: string; paymentMethod?: string };
   const slot = slots.find((item) => item.id === input.pickupSlotId) ?? slots[1];
   const items = input.items ?? [];
@@ -179,8 +179,8 @@ router.post("/orders", (req, res) => {
   orders = [order, ...orders];
   return res.status(201).json(order);
 });
-router.get("/notifications", (_req, res) => res.json(notifications));
-router.post("/notifications/read-all", (_req, res) => {
+router.get("/notifications", (_req: any, res: any) => res.json(notifications));
+router.post("/notifications/read-all", (_req: any, res: any) => {
   notifications.forEach((notification) => {
     notification.read = true;
   });
