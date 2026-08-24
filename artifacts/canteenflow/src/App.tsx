@@ -22,11 +22,11 @@ export type Food = {
 };
 type CartLine = Pick<Food, "id" | "name" | "price" | "image" | "category" | "availableQuantity"> & { quantity: number };
 type OrderItem = Omit<CartLine, "category">;
-type Status = "placed" | "accepted" | "preparing" | "ready" | "completed" | "cancelled";
+type Status = "placed" | "accepted" | "completed" | "cancelled" | "rejected";
 type Order = { id: string; items: OrderItem[]; total: number; status: Status; pickupTime: string; pickupToken: string; placedAt: string; customerName?: string; customerPhone?: string; recipientName?: string; recipientPhone?: string; recipientHostel?: string; deliveryAddress?: string; };
 type DbPickupSlot = { id: string; slot_type: "DAILY" | "CUSTOM"; slot_name: string | null; slot_date: string | null; start_time: string; end_time: string; is_active: boolean; created_at: string; };
 export type Notice = { id: string; recipient_id: string | null; recipient_role: string; order_id: string | null; title: string; message: string; notification_type: string; is_read: boolean; created_at: string };
-type DbOrder = { id: string; customer_name: string; customer_phone: string; total_amount: number; order_status: "placed" | "accepted" | "preparing" | "ready" | "completed" | "cancelled"; pickup_time: string; payment_status: "pending" | "paid" | "failed"; created_at: string; };
+type DbOrder = { id: string; customer_name: string; customer_phone: string; total_amount: number; order_status: "placed" | "accepted" | "completed" | "cancelled" | "rejected"; pickup_time: string; payment_status: "pending" | "paid" | "failed"; created_at: string; rejection_reason?: string | null; };
 type DbOrderItem = { id: string; order_id: string; food_id: string; food_name: string; quantity: number; price: number; subtotal: number; };
 
 export type UserProfile = {
@@ -118,8 +118,8 @@ function FoodVisual({ item, className = "" }: { item: Pick<Food, "name" | "categ
   return <div className={`relative overflow-hidden bg-[#efb66f] ${className}`}><img src={item.image} alt={item.name} className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} /><span className="absolute bottom-3 left-3 hidden font-display text-4xl text-white/85">{item.name.charAt(0)}</span></div>;
 }
 function StatusPill({ status }: { status: string }) {
-  const labels: Record<string, string> = { placed: "Placed", accepted: "Accepted", preparing: "Cooking now", ready: "Ready for pickup", completed: "Completed" };
-  const colors: Record<string, string> = { placed: "bg-[#f6ead0] text-[#8b6528]", accepted: "bg-[#dceee5] text-[#26735a]", preparing: "bg-[#ffe1c6] text-[#a7512f]", ready: "bg-[#d5e8e2] text-[#19594d]", completed: "bg-[#e6e0d8] text-[#716252]" };
+  const labels: Record<string, string> = { placed: "Placed", accepted: "Accepted", completed: "Completed", cancelled: "Cancelled", rejected: "Rejected" };
+  const colors: Record<string, string> = { placed: "bg-[#f6ead0] text-[#8b6528]", accepted: "bg-[#dceee5] text-[#26735a]", completed: "bg-[#e6e0d8] text-[#716252]", cancelled: "bg-[#f6dfd9] text-[#ae4735]", rejected: "bg-[#f6dfd9] text-[#ae4735]" };
   return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${colors[status] ?? colors.placed}`}>{labels[status] ?? status}</span>;
 }
 function Shell({ children, cartCount, unreadCount, canteenStatus }: { children: ReactNode; cartCount: number; unreadCount: number; canteenStatus?: "OPEN" | "CLOSED" }) {
@@ -597,10 +597,10 @@ function TrackingPage() {
     return () => { supabase.removeChannel(channel); };
   }, [orderNumber]);
 
-  const statuses: { key: string; title: string; copy: string }[] = [{ key: "placed", title: "Order received", copy: "The canteen has your request." }, { key: "accepted", title: "Canteen accepted", copy: "Your plate has a place in the queue." }, { key: "preparing", title: "Being prepared", copy: "Freshness is happening right now." }, { key: "ready", title: "Ready for pickup", copy: "Show your token at the handoff counter." }, { key: "completed", title: "Picked up", copy: "Enjoy every bite." }];
+  const statuses: { key: string; title: string; copy: string }[] = [{ key: "placed", title: "Order received", copy: "The canteen has your request." }, { key: "accepted", title: "Canteen accepted", copy: "Your plate has a place in the queue." }, { key: "completed", title: "Picked up", copy: "Enjoy every bite." }];
   
   if (!order) return <Empty title="Loading order..." copy="Fetching the latest updates." action={null} />;
-  if (order.order_status === "cancelled") return <div className="mt-10"><Empty title="Order Cancelled" copy="This order was cancelled by the canteen." action={<Link href="/menu" className="font-bold text-[#c65d3d]">Go back to menu</Link>} /></div>;
+  if (order.order_status === "cancelled" || order.order_status === "rejected") return <div className="mt-10"><Empty title={order.order_status === "rejected" ? "Order Rejected" : "Order Cancelled"} copy={order.rejection_reason ? `Reason: ${order.rejection_reason}` : "This order was cancelled."} action={<Link href="/menu" className="font-bold text-[#c65d3d]">Go back to menu</Link>} /></div>;
   
   const index = statuses.findIndex((s) => s.key === order.order_status);
   
@@ -1078,7 +1078,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
     await supabase.rpc("set_canteen_status", { p_status: newStatus });
   };
 
-  const updateStatus = async (orderId: string, newStatus: Status) => {
+  const updateStatus = async (orderId: string, newStatus: Status, rejectionReason?: string) => {
     if (newStatus === "cancelled" && !window.confirm("Are you sure you want to cancel this order?")) return;
     setUpdating(orderId);
     
@@ -1088,11 +1088,21 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
         alert("Failed to accept order. " + (error.message || "Stock might be insufficient."));
       }
     } else {
-      await supabase.from("orders").update({ order_status: newStatus }).eq("id", orderId);
+      const payload: any = { order_status: newStatus };
+      if (newStatus === "rejected" && rejectionReason) {
+        payload.rejection_reason = rejectionReason;
+      }
+      await supabase.from("orders").update(payload).eq("id", orderId);
     }
     
     await fetchOrders(selectedDate);
     setUpdating(null);
+  };
+
+  const handleReject = (orderId: string) => {
+    const reason = window.prompt("Optional: Enter a reason for rejecting this order (e.g., 'no food')");
+    if (reason === null) return;
+    updateStatus(orderId, "rejected", reason);
   };
   const toggleSlot = async (id: string, current: boolean) => {
     await supabase.from("pickup_slots").update({ is_active: !current }).eq("id", id);
@@ -1134,13 +1144,12 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   };
   
   const filteredOrders = allOrders.filter(o => filter === "all" ? true : o.status === filter);
-  const nextStatus: Record<Status, Status | null> = { placed: "accepted", accepted: "preparing", preparing: "ready", ready: "completed", completed: null, cancelled: null };
 
   const foodSummary = useMemo(() => {
     const summary: Record<string, number> = {};
     const validStatuses = summaryMode === "total" 
-      ? ["placed", "accepted", "preparing", "ready", "completed"] 
-      : ["placed", "accepted", "preparing"];
+      ? ["placed", "accepted", "completed"] 
+      : ["placed", "accepted"];
       
     for (const order of allOrders) {
       if (validStatuses.includes(order.status)) {
@@ -1242,7 +1251,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="flex flex-wrap gap-2">
-            {["all", "placed", "accepted", "preparing", "ready", "completed", "cancelled"].map(f => (
+            {["all", "placed", "accepted", "completed", "cancelled", "rejected"].map(f => (
               <button 
                 key={f} 
                 onClick={() => setFilter(f as Status | "all")} 
@@ -1304,15 +1313,28 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 border-t border-[#e3d7c5] pt-4">
-                  {nextStatus[o.status] && (
-                    <Button variant="primary" onClick={() => updateStatus(o.id, nextStatus[o.status] as Status)} disabled={updating === o.id}>
-                      Mark as {nextStatus[o.status]}
+                  {o.status === "placed" && (
+                    <>
+                      <Button variant="primary" onClick={() => updateStatus(o.id, "accepted")} disabled={updating === o.id}>
+                        Accept Order
+                      </Button>
+                      <button onClick={() => handleReject(o.id)} disabled={updating === o.id} className="rounded-xl px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50">
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {o.status === "accepted" && (
+                    <Button variant="primary" onClick={() => updateStatus(o.id, "completed")} disabled={updating === o.id}>
+                      Mark as Completed
                     </Button>
                   )}
-                  {o.status !== "cancelled" && o.status !== "completed" && (
+                  {o.status === "accepted" && (
                     <button onClick={() => updateStatus(o.id, "cancelled")} disabled={updating === o.id} className="rounded-xl px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50">
                       Cancel Order
                     </button>
+                  )}
+                  {(o.status === "cancelled" || o.status === "rejected") && (o as any).rejection_reason && (
+                    <p className="text-xs text-red-500 font-bold w-full mt-2">Reason: {(o as any).rejection_reason}</p>
                   )}
                 </div>
               </div>

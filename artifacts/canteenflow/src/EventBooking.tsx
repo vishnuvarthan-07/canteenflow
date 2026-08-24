@@ -305,8 +305,46 @@ export function AdminEventBookings() {
       });
   };
 
-  useEffect(() => { fetchBookings(); }, []);
+  const playNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+      osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.error("Audio playback failed", e);
+    }
+  };
 
+  useEffect(() => { 
+    fetchBookings(); 
+
+    const channel = supabase
+      .channel('admin-event-bookings')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'event_bookings' },
+        (payload) => {
+          playNotificationSound();
+          alert(`New Event Booking Received from ${payload.new.student_name}!`);
+          fetchBookings();
+        }
+      )
+      .subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
+  }, []);
   const updateStatus = async (id: string, status: string, reason?: string) => {
     await supabase.from("event_bookings").update({ status, rejection_reason: reason || null }).eq("id", id);
     fetchBookings();
