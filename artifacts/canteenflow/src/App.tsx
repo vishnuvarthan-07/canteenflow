@@ -1053,6 +1053,29 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
     }
   };
 
+  const playNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.error("Audio playback failed", e);
+    }
+  };
+
+
   useEffect(() => {
     fetchOrders(selectedDate);
     fetchRegistrationRequests();
@@ -1060,11 +1083,31 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
 
     supabase.from("pickup_slots").select("*").order("start_time", { ascending: true })
       .then(({ data }) => setSlots((data as DbPickupSlot[]) || []));
+    const handleNewItem = (payload: any, tableName: string) => {
+      let isNewPending = false;
+      if (tableName === 'orders' && payload.new.order_status === 'placed') isNewPending = true;
+      if (tableName === 'event_bookings' && payload.new.status === 'PENDING') isNewPending = true;
+      if (tableName === 'profiles' && payload.new.approval_status === 'pending' && payload.new.role === 'student') isNewPending = true;
+
+      if (isNewPending) {
+        playNotificationSound();
+      }
       
+      fetchPendingCounts();
+      if (tableName === 'orders') fetchOrders(selectedDate);
+      if (tableName === 'profiles') fetchRegistrationRequests();
+    };
+
     const channel = supabase.channel('admin-counts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchPendingCounts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_bookings' }, fetchPendingCounts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchPendingCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (p) => {
+        if (p.eventType === 'INSERT') handleNewItem(p, 'orders'); else fetchPendingCounts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_bookings' }, (p) => {
+        if (p.eventType === 'INSERT') handleNewItem(p, 'event_bookings'); else fetchPendingCounts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (p) => {
+        if (p.eventType === 'INSERT') handleNewItem(p, 'profiles'); else fetchPendingCounts();
+      })
       .subscribe();
       
     return () => {
@@ -1245,7 +1288,14 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
       {activeTab === "orders" && (
         <section className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5 animate-rise">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h2 className="font-display text-2xl">Order Management</h2>
+          <h2 className="font-display text-2xl flex flex-wrap items-center gap-3">
+            Order Management
+            {pendingOrdersCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#ea6b42]/10 px-3 py-1 text-sm font-bold text-[#ea6b42]">
+                <Bell size={14} className="animate-pulse" /> {pendingOrdersCount} New Orders
+              </span>
+            )}
+          </h2>
           <div className="flex items-center gap-2">
             <label className="text-sm font-bold text-[#294b41]">Date:</label>
             <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="rounded-xl border border-[#e3d7c5] bg-white px-3 py-1.5 text-sm" />
@@ -1474,7 +1524,14 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
 
       {activeTab === "event-bookings" && (
         <section className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5 animate-rise">
-          <h2 className="font-display text-2xl mb-4">Manage Event Bookings</h2>
+          <h2 className="font-display text-2xl mb-4 flex flex-wrap items-center gap-3">
+            Manage Event Bookings
+            {pendingEventsCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#ea6b42]/10 px-3 py-1 text-sm font-bold text-[#ea6b42]">
+                <Bell size={14} className="animate-pulse" /> {pendingEventsCount} New Bookings
+              </span>
+            )}
+          </h2>
           <AdminEventBookings />
         </section>
       )}
@@ -1488,7 +1545,14 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
 
       {activeTab === "requests" && (
         <section className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5 animate-rise">
-          <h2 className="font-display text-2xl mb-4">Registration Requests</h2>
+          <h2 className="font-display text-2xl mb-4 flex flex-wrap items-center gap-3">
+            Registration Requests
+            {pendingRegistrationsCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#ea6b42]/10 px-3 py-1 text-sm font-bold text-[#ea6b42]">
+                <Bell size={14} className="animate-pulse" /> {pendingRegistrationsCount} New Requests
+              </span>
+            )}
+          </h2>
           <AdminRegistrationRequests />
         </section>
       )}
