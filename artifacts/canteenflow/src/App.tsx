@@ -10,6 +10,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import NotFound from "@/pages/not-found";
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from "wouter";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import { EventBookingIntro, EventBookingWizard, MyEventBookingsPage, AdminEventBookings, AdminCelebrationItems } from "./EventBooking";
 
 export type Food = {
@@ -1079,9 +1080,18 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
       .then(({ data }) => setSlots((data as DbPickupSlot[]) || []));
     const handleNewItem = (payload: any, tableName: string) => {
       let isNewPending = false;
-      if (tableName === 'orders' && payload.new.order_status === 'placed') isNewPending = true;
-      if (tableName === 'event_bookings' && payload.new.status === 'PENDING') isNewPending = true;
-      if (tableName === 'profiles' && payload.new.approval_status === 'pending' && payload.new.role === 'student') isNewPending = true;
+      if (tableName === 'orders' && payload.new.order_status === 'placed') {
+        isNewPending = true;
+        toast.success(`New Food Order from ${payload.new.student_name}!`, { duration: 5000 });
+      }
+      if (tableName === 'event_bookings' && payload.new.status === 'PENDING') {
+        isNewPending = true;
+        toast.success(`New Event Booking from ${payload.new.student_name}!`, { duration: 5000 });
+      }
+      if (tableName === 'profiles' && payload.new.approval_status === 'pending' && payload.new.role === 'student') {
+        isNewPending = true;
+        toast.success(`New Registration Request from ${payload.new.name}!`, { duration: 5000 });
+      }
 
       if (isNewPending) {
         playNotificationSound();
