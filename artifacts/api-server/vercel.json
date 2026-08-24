@@ -1,15 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "dist/app.mjs",
-      "use": "@vercel/node"
+  "buildCommand": "pnpm run build",
+  "functions": {
+    "dist/app.mjs": {
+      "runtime": "nodejs22.x"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/dist/app.mjs"
+      "source": "/api/(.*)",
+      "destination": "/dist/app.mjs"
     }
   ]
 }
