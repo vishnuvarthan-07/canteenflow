@@ -111,6 +111,28 @@ const usePersisted = <T,>(key: string, fallback: T) => {
   return [value, setValue] as const;
 };
 
+export const playNotificationSound = () => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch (e) {
+    console.error("Audio playback failed", e);
+  }
+};
+
 export function Button({ children, className = "", variant = "primary", onClick, disabled = false, type = "button", testId }: { children: ReactNode; className?: string; variant?: "primary" | "quiet" | "outline" | "dark" | "danger"; onClick?: () => void; disabled?: boolean; type?: "button" | "submit"; testId?: string }) {
   const variants = { primary: "bg-[#ea6b42] text-[#fff9ec] hover:bg-[#d85836] shadow-[0_7px_18px_rgba(215,83,48,.2)]", quiet: "bg-[#f4ead9] text-[#6e4d35] hover:bg-[#eadcc5]", outline: "border border-[#d9c9b1] bg-transparent text-[#604a36] hover:bg-[#f4ead9]", dark: "bg-[#173f37] text-[#fff9ec] hover:bg-[#21564b]", danger: "bg-[#f6dfd9] text-[#ae4735] hover:bg-[#f1cec5]" };
   return <button type={type} disabled={disabled} onClick={onClick} data-testid={testId} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-45 ${variants[variant]} ${className}`}>{children}</button>;
@@ -1048,28 +1070,6 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
     }
   };
 
-  const playNotificationSound = () => {
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
-    } catch (e) {
-      console.error("Audio playback failed", e);
-    }
-  };
-
 
   useEffect(() => {
     fetchOrders(selectedDate);
@@ -1778,9 +1778,21 @@ function App() {
     
     const channel = supabase.channel('public:canteen_settings')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'canteen_settings' }, (payload) => {
-        setCanteenStatus(payload.new.canteen_status as "OPEN" | "CLOSED");
+        const newStatus = payload.new.canteen_status as "OPEN" | "CLOSED";
+        setCanteenStatus(newStatus);
+        
+        if (profile?.role === 'student') {
+          playNotificationSound();
+          toast.info(`Canteen is now ${newStatus}!`, { duration: 5000 });
+        }
       }).subscribe();
       
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.role]);
+
+  useEffect(() => {
     supabase.from("foods").select("*")
       .then(({ data, error }) => {
         if (error) {
