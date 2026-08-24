@@ -1142,7 +1142,16 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
     if (newStatus === "CLOSED") {
       if (!window.confirm("Close Canteen?\n\nNew food orders will no longer be accepted.\nStudents with active orders will receive a notification.")) return;
     }
-    await supabase.rpc("set_canteen_status", { p_status: newStatus });
+    try {
+      const { error: rpcError } = await supabase.rpc("set_canteen_status", { p_status: newStatus });
+      if (rpcError) {
+        console.warn("RPC failed, trying direct update", rpcError);
+        const { error: updateError } = await supabase.from('canteen_settings').update({ canteen_status: newStatus }).eq('id', 1);
+        if (updateError) throw updateError;
+      }
+    } catch (err: any) {
+      alert("Network or Server error updating Canteen Status: " + err.message);
+    }
   };
 
   const updateStatus = async (orderId: string, newStatus: Status, rejectionReason?: string) => {
