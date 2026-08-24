@@ -4,7 +4,7 @@ import {
   Home as HomeIcon, LogOut, Minus, PackageCheck, PartyPopper, Plus, QrCode,
   ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Soup, Star,
   Store, Ticket, Timer, Trash2, UserRound, WalletCards, Zap, Cake, FileText, X,
-  MapPin, Info, Flame, History, Users
+  MapPin, Info, Flame, History, Users, UserPlus
 } from "lucide-react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import NotFound from "@/pages/not-found";
