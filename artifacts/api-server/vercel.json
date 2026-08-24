@@ -1,15 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "pnpm run build",
-  "functions": {
-    "dist/app.mjs": {
-      "runtime": "nodejs22.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/dist/app.mjs"
+      "destination": "/api/index.js"
     }
   ]
 }
