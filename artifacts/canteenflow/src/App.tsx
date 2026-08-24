@@ -1781,7 +1781,7 @@ function App() {
         const newStatus = payload.new.canteen_status as "OPEN" | "CLOSED";
         setCanteenStatus(newStatus);
         
-        if (profile?.role === 'student') {
+        if (profile?.role === 'student' && !window.location.pathname.startsWith('/admin')) {
           playNotificationSound();
           toast.info(`Canteen is now ${newStatus}!`, { duration: 5000 });
         }
