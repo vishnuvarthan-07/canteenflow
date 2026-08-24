@@ -237,7 +237,9 @@ function AdminShell({ children, activeTab, setActiveTab, counts }: { children: R
           { id: "requests", label: "Requests", icon: Users }
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)} className={`relative flex flex-col shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold ${activeTab === t.id ? "text-[#f6cb63]" : "text-[#d2e1d7]"}`}>
-            {t.id === "orders" && unreadAdminCount > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{unreadAdminCount}</span>}
+            {t.id === "orders" && counts.orders > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{counts.orders}</span>}
+            {t.id === "event-bookings" && counts.events > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{counts.events}</span>}
+            {t.id === "requests" && counts.registrations > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{counts.registrations}</span>}
             <t.icon size={19} /><span>{t.label}</span>
           </button>
         ))}
@@ -1219,8 +1221,8 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: "Live orders", value: allOrders.filter((o) => o.status !== "completed" && o.status !== "cancelled").length, icon: Timer }, 
-              { label: "Ready now", value: allOrders.filter((o) => o.status === "ready").length, icon: PackageCheck }, 
+              { label: "Live orders", value: allOrders.filter((o) => o.status === "placed" || o.status === "accepted").length, icon: Timer }, 
+              { label: "Accepted", value: allOrders.filter((o) => o.status === "accepted").length, icon: PackageCheck }, 
               { label: "Today's plates", value: todaysPlates, icon: Soup }, 
               { label: "Revenue", value: money(totalRevenue), icon: WalletCards }
             ].map(({ label, value, icon: Icon }) => (
