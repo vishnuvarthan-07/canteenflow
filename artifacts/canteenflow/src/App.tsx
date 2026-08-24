@@ -151,19 +151,16 @@ function AdminShell({ children, activeTab, setActiveTab, counts }: { children: R
       <nav className="space-y-2 flex-1">
         <button onClick={() => setActiveTab("dashboard")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "dashboard" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Dashboard</button>
         <button onClick={() => setActiveTab("menus")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "menus" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Manage Foods</button>
-        <button onClick={() => setActiveTab("orders")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 flex items-center justify-between text-left font-bold ${activeTab === "orders" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
+        <button onClick={() => setActiveTab("orders")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "orders" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
           Order Management 
-          {counts.orders > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{counts.orders}</span>}
         </button>
         <button onClick={() => setActiveTab("slots")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "slots" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Pickup Slots</button>
-        <button onClick={() => setActiveTab("event-bookings")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 flex items-center justify-between text-left font-bold ${activeTab === "event-bookings" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
+        <button onClick={() => setActiveTab("event-bookings")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "event-bookings" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
           Event Bookings
-          {counts.events > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{counts.events}</span>}
         </button>
         <button onClick={() => setActiveTab("celebrations")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "celebrations" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Celebration Items</button>
-        <button onClick={() => setActiveTab("requests")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 flex items-center justify-between text-left font-bold ${activeTab === "requests" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
+        <button onClick={() => setActiveTab("requests")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "requests" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
           Registration Requests
-          {counts.registrations > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{counts.registrations}</span>}
         </button>
         <div className="pt-4 mt-4 border-t border-white/10 space-y-1.5">
           <button onClick={() => supabase.auth.signOut()} className="w-full rounded-xl px-3 py-3 text-sm font-bold text-[#d2e1d7] hover:bg-white/10 flex items-center gap-3 text-left"><LogOut size={18} /> Sign Out</button>
@@ -237,9 +234,6 @@ function AdminShell({ children, activeTab, setActiveTab, counts }: { children: R
           { id: "requests", label: "Requests", icon: Users }
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)} className={`relative flex flex-col shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold ${activeTab === t.id ? "text-[#f6cb63]" : "text-[#d2e1d7]"}`}>
-            {t.id === "orders" && counts.orders > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{counts.orders}</span>}
-            {t.id === "event-bookings" && counts.events > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{counts.events}</span>}
-            {t.id === "requests" && counts.registrations > 0 && <span className="absolute right-2 top-1 grid size-3 place-items-center rounded-full bg-[#ea6b42] text-[8px] font-bold text-white">{counts.registrations}</span>}
             <t.icon size={19} /><span>{t.label}</span>
           </button>
         ))}
@@ -1330,7 +1324,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="flex flex-wrap gap-2">
-            {["all", "placed", "accepted", "completed", "cancelled", "rejected"].map(f => (
+            {["all", "accepted", "cancelled"].map(f => (
               <button 
                 key={f} 
                 onClick={() => setFilter(f as Status | "all")} 
@@ -1567,14 +1561,16 @@ function AdminRegistrationRequests() {
   useEffect(() => {
     fetchRequests();
     const channel = supabase.channel('public:profiles')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: "approval_status=eq.pending" }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
         fetchRequests();
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  const [filter, setFilter] = useState("all");
+
   const fetchRequests = async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('role', 'student').eq('approval_status', 'pending');
+    const { data } = await supabase.from('profiles').select('*').eq('role', 'student');
     setRequests(data || []);
     setLoading(false);
   };
@@ -1586,7 +1582,7 @@ function AdminRegistrationRequests() {
         p_status: status
       });
       if (error) throw error;
-      setRequests(prev => prev.filter(r => r.id !== studentId));
+      setRequests(prev => prev.map(r => r.id === studentId ? { ...r, approval_status: status } : r));
       alert(`Student ${status} successfully!`);
     } catch (err: any) {
       alert("Error: " + err.message);
@@ -1595,11 +1591,32 @@ function AdminRegistrationRequests() {
 
   if (loading) return <div className="text-[#846d55]">Loading requests...</div>;
 
-  if (requests.length === 0) return <Empty title="No pending requests" copy="You're all caught up! No students are waiting for approval." />;
+  const filteredRequests = requests.filter(r => {
+    if (filter === "all") return true;
+    if (filter === "accepted") return r.approval_status === "approved";
+    if (filter === "cancelled") return r.approval_status === "rejected";
+    return true;
+  });
 
   return (
     <div className="grid gap-4">
-      {requests.map(req => (
+      <div className="flex gap-2 mb-2">
+        {["all", "accepted", "cancelled"].map(f => (
+          <button 
+            key={f} 
+            onClick={() => setFilter(f)} 
+            className={`rounded-xl border px-3 py-1.5 text-xs font-bold capitalize transition ${filter === f ? "border-[#173f37] bg-[#173f37] text-white" : "border-[#e3d7c5] bg-transparent text-[#846d55] hover:border-[#bd5739]"}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+      
+      {filteredRequests.length === 0 && (
+        <Empty title="No requests found" copy="No student registrations match this filter." />
+      )}
+
+      {filteredRequests.map(req => (
         <div key={req.id} className="flex flex-col gap-4 rounded-xl border border-[#dcccb8] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-bold text-[#173f37] text-lg">{req.name}</h3>
@@ -1611,8 +1628,16 @@ function AdminRegistrationRequests() {
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <button onClick={() => handleAction(req.id, 'rejected')} className="rounded-lg bg-[#fff0e9] px-4 py-2 text-sm font-bold text-[#ea6b42] transition hover:bg-[#ffdfcf]">Reject</button>
-            <button onClick={() => handleAction(req.id, 'approved')} className="rounded-lg bg-[#26735a] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1a5240]">Approve</button>
+            {req.approval_status === 'pending' ? (
+              <>
+                <button onClick={() => handleAction(req.id, 'rejected')} className="rounded-lg bg-[#fff0e9] px-4 py-2 text-sm font-bold text-[#ea6b42] transition hover:bg-[#ffdfcf]">Reject</button>
+                <button onClick={() => handleAction(req.id, 'approved')} className="rounded-lg bg-[#26735a] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1a5240]">Approve</button>
+              </>
+            ) : (
+              <span className={`px-3 py-1.5 text-xs font-bold rounded-lg ${req.approval_status === 'approved' ? 'bg-[#eaf2ec] text-[#26735a]' : 'bg-[#fff0e9] text-[#ea6b42]'}`}>
+                {req.approval_status.toUpperCase()}
+              </span>
+            )}
           </div>
         </div>
       ))}

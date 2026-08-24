@@ -305,27 +305,7 @@ export function AdminEventBookings() {
       });
   };
 
-  const playNotificationSound = () => {
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-      osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
-    } catch (e) {
-      console.error("Audio playback failed", e);
-    }
-  };
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => { 
     fetchBookings(); 
@@ -334,10 +314,8 @@ export function AdminEventBookings() {
       .channel('admin-event-bookings')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'event_bookings' },
-        (payload) => {
-          playNotificationSound();
-          alert(`New Event Booking Received from ${payload.new.student_name}!`);
+        { event: '*', schema: 'public', table: 'event_bookings' },
+        () => {
           fetchBookings();
         }
       )
@@ -352,11 +330,29 @@ export function AdminEventBookings() {
 
   if (loading) return <div className="p-8 text-center text-[#8a745e]">Loading event bookings...</div>;
 
+  const filteredBookings = bookings.filter(b => {
+    if (filter === "all") return true;
+    if (filter === "accepted") return b.status === "CONFIRMED";
+    if (filter === "cancelled") return b.status === "CANCELLED" || b.status === "REJECTED";
+    return true;
+  });
+
   return (
     <div className="space-y-4">
-      {bookings.length === 0 ? (
-        <div className="p-8 text-center text-[#8a745e]">No event bookings yet.</div>
-      ) : bookings.map(b => (
+      <div className="flex gap-2 mb-4">
+        {["all", "accepted", "cancelled"].map(f => (
+          <button 
+            key={f} 
+            onClick={() => setFilter(f)} 
+            className={`rounded-xl border px-3 py-1.5 text-xs font-bold capitalize transition ${filter === f ? "border-[#173f37] bg-[#173f37] text-white" : "border-[#e3d7c5] bg-transparent text-[#846d55] hover:border-[#bd5739]"}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+      {filteredBookings.length === 0 ? (
+        <div className="p-8 text-center text-[#8a745e]">No event bookings match the filter.</div>
+      ) : filteredBookings.map(b => (
         <div key={b.id} className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5">
           <div className="mb-4 flex items-start justify-between border-b border-[#e3d7c5] pb-4">
             <div>
