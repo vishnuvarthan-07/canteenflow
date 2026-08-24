@@ -139,9 +139,8 @@ function Shell({ children, cartCount, unreadCount, canteenStatus }: { children: 
   </main><nav className="fixed bottom-0 left-0 right-0 z-30 flex h-[72px] items-center justify-around border-t border-[#e3d7c5] bg-[#fffaf0]/95 px-3 backdrop-blur lg:hidden">{links.map(({ href, label, icon: Icon }) => <Link href={href} key={href} className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold ${location === href ? "text-[#df603b]" : "text-[#8c7660]"}`}><Icon size={19} /><span>{label}</span></Link>)}</nav></div>;
 }
 
-function AdminShell({ children, activeTab, setActiveTab, unreadNotices = [], adminNotices = [], onNoticeClick }: { children: ReactNode, activeTab: string, setActiveTab: (t: string) => void, unreadNotices?: Notice[], adminNotices?: Notice[], onNoticeClick?: (notice: Notice) => void }) {
+function AdminShell({ children, activeTab, setActiveTab, counts }: { children: ReactNode, activeTab: string, setActiveTab: (t: string) => void, counts: { orders: number, events: number, registrations: number, total: number } }) {
   const [showBellDropdown, setShowBellDropdown] = useState(false);
-  const unreadAdminCount = unreadNotices.length;
   
   return <div className="grain min-h-[100dvh] bg-[#f7f0e5] flex">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[236px] flex-col bg-[#173f37] px-5 py-6 text-[#fff8e8] lg:flex">
@@ -154,12 +153,18 @@ function AdminShell({ children, activeTab, setActiveTab, unreadNotices = [], adm
         <button onClick={() => setActiveTab("menus")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "menus" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Manage Foods</button>
         <button onClick={() => setActiveTab("orders")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 flex items-center justify-between text-left font-bold ${activeTab === "orders" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
           Order Management 
-          {unreadAdminCount > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{unreadAdminCount}</span>}
+          {counts.orders > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{counts.orders}</span>}
         </button>
         <button onClick={() => setActiveTab("slots")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "slots" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Pickup Slots</button>
-        <button onClick={() => setActiveTab("event-bookings")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "event-bookings" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Event Bookings</button>
+        <button onClick={() => setActiveTab("event-bookings")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 flex items-center justify-between text-left font-bold ${activeTab === "event-bookings" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
+          Event Bookings
+          {counts.events > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{counts.events}</span>}
+        </button>
         <button onClick={() => setActiveTab("celebrations")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "celebrations" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Celebration Items</button>
-        <button onClick={() => setActiveTab("requests")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "requests" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>Registration Requests</button>
+        <button onClick={() => setActiveTab("requests")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 flex items-center justify-between text-left font-bold ${activeTab === "requests" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
+          Registration Requests
+          {counts.registrations > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px] font-bold text-white">{counts.registrations}</span>}
+        </button>
         <div className="pt-4 mt-4 border-t border-white/10 space-y-1.5">
           <button onClick={() => supabase.auth.signOut()} className="w-full rounded-xl px-3 py-3 text-sm font-bold text-[#d2e1d7] hover:bg-white/10 flex items-center gap-3 text-left"><LogOut size={18} /> Sign Out</button>
         </div>
@@ -172,32 +177,48 @@ function AdminShell({ children, activeTab, setActiveTab, unreadNotices = [], adm
         <div className="ml-auto relative">
           <button onClick={() => setShowBellDropdown(!showBellDropdown)} className="relative flex items-center justify-center size-10 rounded-full hover:bg-black/5 transition">
             <Bell size={20} className="text-[#294b41]" />
-            {unreadAdminCount > 0 && <span className="absolute top-1.5 right-2 grid size-4 place-items-center rounded-full bg-[#ea6b42] text-[9px] font-bold text-white border-2 border-[#f7f0e5]">{unreadAdminCount}</span>}
+            {counts.total > 0 && <span className="absolute top-1.5 right-2 grid size-4 place-items-center rounded-full bg-[#ea6b42] text-[9px] font-bold text-white border-2 border-[#f7f0e5]">{counts.total}</span>}
           </button>
           
           {showBellDropdown && (
             <div className="absolute right-0 top-[110%] w-80 rounded-2xl border border-[#e3d7c5] bg-white p-3 shadow-xl z-50 animate-rise">
               <div className="flex items-center justify-between px-2 mb-2">
-                <h3 className="font-bold text-[#294b41]">Notifications</h3>
-                {unreadAdminCount > 0 && <span className="text-xs font-bold text-[#ea6b42]">{unreadAdminCount} new</span>}
+                <h3 className="font-bold text-[#294b41]">Pending Actions</h3>
+                {counts.total > 0 && <span className="text-xs font-bold text-[#ea6b42]">{counts.total} items</span>}
               </div>
               <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1 no-scrollbar">
-                {adminNotices.length === 0 ? (
-                  <p className="text-center text-sm text-[#8c745c] py-4">No recent notifications</p>
+                {counts.total === 0 ? (
+                  <p className="text-center text-sm text-[#8c745c] py-4">All caught up!</p>
                 ) : (
-                  adminNotices.map((n) => (
-                    <button key={n.id} onClick={() => { setShowBellDropdown(false); onNoticeClick?.(n); }} className={`w-full flex items-start gap-3 rounded-xl p-3 text-left transition ${!n.is_read ? 'bg-[#fff0e9]' : 'hover:bg-[#f7f0e5]'}`}>
-                      <div className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-[#ea6b42]/10 text-[#ea6b42]">
-                        <Bell size={16} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-[#294b41] truncate">{n.title}</p>
-                        <p className="mt-0.5 text-xs text-[#7b614b] line-clamp-2">{n.message}</p>
-                        <p className="mt-1.5 text-[10px] font-bold text-[#a9c0b1] uppercase tracking-wider">{new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                      </div>
-                      {!n.is_read && <span className="mt-2 size-2 shrink-0 rounded-full bg-[#ea6b42]" />}
-                    </button>
-                  ))
+                  <>
+                    {counts.orders > 0 && (
+                      <button onClick={() => { setShowBellDropdown(false); setActiveTab("orders"); }} className="w-full flex items-start gap-3 rounded-xl p-3 text-left transition hover:bg-[#f7f0e5] bg-[#fff0e9]">
+                        <div className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-[#ea6b42]/10 text-[#ea6b42]"><ReceiptText size={16} /></div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-[#294b41]">Pending Orders</p>
+                          <p className="mt-0.5 text-xs text-[#7b614b]">{counts.orders} order(s) require action.</p>
+                        </div>
+                      </button>
+                    )}
+                    {counts.events > 0 && (
+                      <button onClick={() => { setShowBellDropdown(false); setActiveTab("event-bookings"); }} className="w-full flex items-start gap-3 rounded-xl p-3 text-left transition hover:bg-[#f7f0e5] bg-[#fff0e9]">
+                        <div className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-[#ea6b42]/10 text-[#ea6b42]"><PartyPopper size={16} /></div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-[#294b41]">Event Bookings</p>
+                          <p className="mt-0.5 text-xs text-[#7b614b]">{counts.events} event(s) awaiting confirmation.</p>
+                        </div>
+                      </button>
+                    )}
+                    {counts.registrations > 0 && (
+                      <button onClick={() => { setShowBellDropdown(false); setActiveTab("requests"); }} className="w-full flex items-start gap-3 rounded-xl p-3 text-left transition hover:bg-[#f7f0e5] bg-[#fff0e9]">
+                        <div className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-[#ea6b42]/10 text-[#ea6b42]"><UserPlus size={16} /></div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-[#294b41]">Registration Requests</p>
+                          <p className="mt-0.5 text-xs text-[#7b614b]">{counts.registrations} user(s) waiting for approval.</p>
+                        </div>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -950,9 +971,12 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   const [summaryMode, setSummaryMode] = useState<"total" | "prepare">("total");
   const [slotsTab, setSlotsTab] = useState<"daily" | "custom">("daily");
   const [newOrderAlert, setNewOrderAlert] = useState<Notice | null>(null);
-  const [unreadNotices, setUnreadNotices] = useState<Notice[]>([]);
-  const [adminNotices, setAdminNotices] = useState<Notice[]>([]);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [pendingEventsCount, setPendingEventsCount] = useState(0);
+  const [pendingRegistrationsCount, setPendingRegistrationsCount] = useState(0);
   const [highlightOrderId, setHighlightOrderId] = useState<string | null>(null);
+
+  const globalPendingCount = pendingOrdersCount + pendingEventsCount + pendingRegistrationsCount;
 
   const [registrationRequests, setRegistrationRequests] = useState<any[]>([]);
 
@@ -1011,34 +1035,34 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
       setTotalRevenue(mapped.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0));
     }
   };
-  const fetchAdminNotices = () => {
-    supabase.from("notifications").select("*").eq("recipient_role", "admin").order("created_at", { ascending: false }).limit(20)
-      .then(({ data }) => {
-        const notices = (data as Notice[]) || [];
-        setAdminNotices(notices);
-        setUnreadNotices(notices.filter(n => !n.is_read));
-      });
+  const fetchPendingCounts = async () => {
+    try {
+      const [ordersRes, eventsRes, profilesRes] = await Promise.all([
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_status', 'placed'),
+        supabase.from('event_bookings').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('approval_status', 'pending').eq('role', 'student')
+      ]);
+      
+      setPendingOrdersCount(ordersRes.count || 0);
+      setPendingEventsCount(eventsRes.count || 0);
+      setPendingRegistrationsCount(profilesRes.count || 0);
+    } catch (err) {
+      console.error("Error fetching pending counts:", err);
+    }
   };
 
   useEffect(() => {
     fetchOrders(selectedDate);
-    fetchAdminNotices();
     fetchRegistrationRequests();
+    fetchPendingCounts();
 
     supabase.from("pickup_slots").select("*").order("start_time", { ascending: true })
       .then(({ data }) => setSlots((data as DbPickupSlot[]) || []));
       
-    const channel = supabase.channel('admin-orders')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-        const notice = payload.new as Notice;
-        if (notice.recipient_role === "admin") {
-          setNewOrderAlert(notice);
-          setAdminNotices(prev => [notice, ...prev].slice(0, 20));
-          setUnreadNotices(prev => [notice, ...prev]);
-          try { new Audio("https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=notification-sound-7062.mp3").play().catch(() => {}); } catch(e) {}
-          fetchOrders(selectedDate);
-        }
-      })
+    const channel = supabase.channel('admin-counts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchPendingCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_bookings' }, fetchPendingCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchPendingCounts)
       .subscribe();
       
     return () => {
@@ -1047,13 +1071,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   }, [selectedDate]);
 
   const handleNoticeClick = (notice: Notice) => {
-    if (!notice.is_read) {
-      supabase.from("notifications").update({ is_read: true }).eq("id", notice.id).then();
-      setUnreadNotices(prev => prev.filter(n => n.id !== notice.id));
-      setAdminNotices(prev => prev.map(n => n.id === notice.id ? { ...n, is_read: true } : n));
-    }
     setNewOrderAlert(null);
-    
     if (notice.order_id) {
       window.history.pushState({}, '', `${window.location.pathname}?tab=orders&orderId=${notice.order_id}`);
       setActiveTab("orders");
@@ -1163,7 +1181,16 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   }, [allOrders, summaryMode]);
 
   return (
-    <AdminShell activeTab={activeTab} setActiveTab={(t) => { window.history.pushState({}, '', `${window.location.pathname}?tab=${t}`); setActiveTab(t); }} unreadNotices={unreadNotices} adminNotices={adminNotices} onNoticeClick={handleNoticeClick}>
+    <AdminShell 
+      activeTab={activeTab} 
+      setActiveTab={(t) => { window.history.pushState({}, '', `${window.location.pathname}?tab=${t}`); setActiveTab(t); }} 
+      counts={{
+        orders: pendingOrdersCount,
+        events: pendingEventsCount,
+        registrations: pendingRegistrationsCount,
+        total: globalPendingCount
+      }}
+    >
       {newOrderAlert && (
         <button onClick={() => handleNoticeClick(newOrderAlert)} className="w-full text-left mb-6 flex items-center justify-between rounded-xl bg-[#26735a] px-4 py-3 text-white shadow-md animate-rise hover:bg-[#1f5e4a] transition cursor-pointer">
           <div className="flex items-center gap-3">
