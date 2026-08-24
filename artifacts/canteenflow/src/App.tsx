@@ -1792,7 +1792,9 @@ function App() {
         
         if (profile?.role === 'student' && !window.location.pathname.startsWith('/admin')) {
           playNotificationSound();
-          toast.info(`Canteen is now ${newStatus}!`, { duration: 5000 });
+          const title = newStatus === 'OPEN' ? '🔔 Canteen Open' : '🔔 Canteen Closed';
+          const desc = newStatus === 'OPEN' ? 'Canteen is now open.' : 'Canteen is now closed.';
+          toast.success(title, { description: desc, duration: 6000 });
         }
       }).subscribe();
       
