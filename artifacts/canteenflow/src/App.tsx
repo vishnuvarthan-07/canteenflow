@@ -11,7 +11,7 @@ import NotFound from "@/pages/not-found";
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { EventBookingIntro, EventBookingWizard, MyEventBookingsPage, AdminEventBookings, AdminCelebrationItems } from "./EventBooking";
+import { EventBookingIntro, EventBookingWizard, MyEventBookingsPage, AdminEventBookings, AdminCelebrationItems, AdminCakeConfigs } from "./EventBooking";
 
 export type Food = {
   id: string; name: string; description: string; price: number; category: string;
@@ -63,6 +63,16 @@ export type EventCakeDetails = {
   cake_weight: string;
   cake_shape: string;
   cake_message: string;
+  unit_price?: number;
+  total_price?: number;
+};
+
+export type CakeConfig = {
+  id: string;
+  flavour: string;
+  weight: string;
+  price: number;
+  is_active: boolean;
 };
 
 export type EventBooking = {
@@ -254,15 +264,14 @@ function AdminShell({ children, activeTab, setActiveTab, counts }: { children: R
           { id: "event-bookings", label: "Events", icon: PartyPopper },
           { id: "menus", label: "Foods", icon: Soup },
           { id: "slots", label: "Slots", icon: CalendarClock },
-          { id: "requests", label: "Requests", icon: Users }
-        ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`relative flex flex-col shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold ${activeTab === t.id ? "text-[#f6cb63]" : "text-[#d2e1d7]"}`}>
-            <t.icon size={19} /><span>{t.label}</span>
-          </button>
-        ))}
-        <Link href="/" className="flex flex-col shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold text-[#d2e1d7]"><HomeIcon size={19} /><span>Student</span></Link>
-    </nav>
-  </div>;
+        { id: "requests", label: "Requests", icon: Users }
+      ].map(t => (
+        <button key={t.id} onClick={() => setActiveTab(t.id)} className={`relative flex flex-col shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold ${activeTab === t.id ? "text-[#f6cb63]" : "text-[#d2e1d7]"}`}>
+          <t.icon size={19} /><span>{t.label}</span>
+        </button>
+      ))}
+  </nav>
+</div>;
 }
 export function PageIntro({ eyebrow, title, sub }: { eyebrow?: string; title: string; sub?: string }) { return <div className="mb-7 animate-rise">{eyebrow && <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.17em] text-[#bb6a42]"><span className="h-px w-5 bg-[#bb6a42]" />{eyebrow}</div>}<h1 className="font-display text-[clamp(2.35rem,5vw,4rem)] leading-[.94] tracking-[-.045em] text-[#24493f]">{title}</h1>{sub && <p className="mt-3 max-w-xl text-[15px] leading-6 text-[#7a6651]">{sub}</p>}</div>; }
 function Empty({ title, copy, action }: { title: string; copy: string; action?: ReactNode }) { return <div className="rounded-2xl border border-dashed border-[#d8c7b1] bg-[#fbf3e7] px-6 py-12 text-center"><div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-[#f6cb63]/35 text-[#9b632e]"><Soup size={22} /></div><h3 className="font-display text-2xl text-[#294b41]">{title}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-[#8a745e]">{copy}</p>{action && <div className="mt-5">{action}</div>}</div>; }
@@ -614,7 +623,7 @@ function OrdersPage() {
 }
 
 function OrderGroup({ title, orders }: { title: string; orders: any[] }) { 
-  return <section><div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-[#a36a43]"><Zap size={16} />{title}</div><div className="grid gap-3">{orders.map((order) => <Link href={`/orders/${order.order_number}`} key={order.id} className="group flex flex-col gap-4 rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-4 shadow-warm-sm transition hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-xl bg-[#f2e4d0] text-[#a9613f]"><ReceiptText size={20} /></div><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono-brand text-xs font-bold">#{order.order_number}</span><StatusPill status={order.order_status} /></div><p className="mt-1 text-sm text-[#846d55]">{order.order_items.map((item: any) => `${item.quantity} × ${item.food_name}`).join(", ")}</p></div></div><div className="flex items-center justify-between gap-6 pl-14 sm:pl-0"><div className="text-right"><p className="font-mono-brand text-sm font-bold text-[#bd5739]">{money(order.total_amount)}</p><p className="mt-1 text-[11px] text-[#a08870]">{order.pickup_time}</p></div><ChevronRight size={18} /></div></Link>)}</div></section>; 
+  return <section><div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-[#a36a43]"><Zap size={16} />{title}</div><div className="grid gap-3">{orders.map((order) => <Link href={`/orders/${order.order_number}`} key={order.id} className="group flex flex-col gap-4 rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-4 shadow-warm-sm transition hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-xl bg-[#f2e4d0] text-[#a9613f]"><ReceiptText size={20} /></div><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono-brand text-xs font-bold">#{order.order_number}</span><StatusPill status={order.order_status} /></div><div className="text-[10px] text-[#a08870] font-bold mt-0.5">Order Date: {order.order_date ? new Date(order.order_date).toLocaleDateString("en-GB").replace(/\//g, "-") : new Date(order.created_at).toLocaleDateString("en-GB").replace(/\//g, "-")}</div><p className="mt-1 text-sm text-[#846d55]">{order.order_items.map((item: any) => `${item.quantity} × ${item.food_name}`).join(", ")}</p></div></div><div className="flex items-center justify-between gap-6 pl-14 sm:pl-0"><div className="text-right"><p className="font-mono-brand text-sm font-bold text-[#bd5739]">{money(order.total_amount)}</p><p className="mt-1 text-[11px] text-[#a08870]">{order.pickup_time}</p></div><ChevronRight size={18} /></div></Link>)}</div></section>; 
 }
 
 function TrackingPage() {
@@ -785,7 +794,7 @@ function ManageFoods() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchFoods = async () => {
-    const { data } = await supabase.from("foods").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("foods_daily").select("*").order("created_at", { ascending: false });
     if (data) setFoods(data);
   };
 
@@ -835,7 +844,7 @@ function ManageFoods() {
     setSession(f.session || "morning");
     setFoodType(f.food_type || "veg");
     setTotalQuantity((f.total_quantity ?? f.available_quantity ?? 30).toString());
-    setAvailableQuantity((f.available_quantity ?? 30).toString());
+    setAvailableQuantity("");
     setIsAvailable(f.is_available);
     setImagePreview(f.image_url || "");
     setImageFile(null);
@@ -857,7 +866,6 @@ function ManageFoods() {
       }
 
       const parsedTotal = parseInt(totalQuantity);
-      const parsedAvailable = parseInt(availableQuantity);
 
       const payload: any = {
         name,
@@ -866,7 +874,6 @@ function ManageFoods() {
         session,
         food_type: foodType,
         total_quantity: parsedTotal,
-        available_quantity: parsedAvailable,
         is_available: isAvailable,
         image_url: finalImageUrl
       };
@@ -905,11 +912,7 @@ function ManageFoods() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <label className="flex flex-col text-xs font-bold text-[#294b41]">Food Name<input required value={name} onChange={e => setName(e.target.value)} className="mt-1 rounded-xl border p-2" placeholder="Masala Dosa" /></label>
           <label className="flex flex-col text-xs font-bold text-[#294b41]">Price<input required type="number" value={price} onChange={e => setPrice(e.target.value)} className="mt-1 rounded-xl border p-2" placeholder="50" /></label>
-          <label className="flex flex-col text-xs font-bold text-[#294b41]">Total Quantity<input required type="number" min="0" value={totalQuantity} onChange={e => {
-            setTotalQuantity(e.target.value);
-            if (!editingId) setAvailableQuantity(e.target.value); // Sync by default when adding new
-          }} className="mt-1 rounded-xl border p-2" /></label>
-          <label className="flex flex-col text-xs font-bold text-[#294b41]">Available Quantity<input required type="number" min="0" value={availableQuantity} onChange={e => setAvailableQuantity(e.target.value)} className="mt-1 rounded-xl border p-2" /></label>
+          <label className="flex flex-col text-xs font-bold text-[#294b41]">Total Quantity<input required type="number" min="0" value={totalQuantity} onChange={e => setTotalQuantity(e.target.value)} className="mt-1 rounded-xl border p-2" /></label>
           
           <label className="flex flex-col text-xs font-bold text-[#294b41] sm:col-span-2">Description<input value={description} onChange={e => setDescription(e.target.value)} className="mt-1 rounded-xl border p-2" placeholder="Fresh crispy masala dosa" /></label>
           
@@ -958,10 +961,10 @@ function ManageFoods() {
               <div>
                 <p className="font-bold text-[#294b41]">{f.name} <span className="ml-2 text-xs text-[#ea6b42]">{money(f.price)}</span></p>
                 <p className="text-xs text-[#8e7b68] mt-1 capitalize">{f.session} • {f.food_type}</p>
-                <div className="mt-1.5 flex gap-2 text-[11px] font-bold">
-                  <span className="rounded bg-[#f0e8dc] px-2 py-0.5 text-[#8e7b68]">{f.total_quantity ?? f.available_quantity} total</span>
-                  <span className="rounded bg-[#eaf2ec] px-2 py-0.5 text-[#26735a]">{(f.total_quantity ?? f.available_quantity) - f.available_quantity} ordered</span>
-                  <span className="rounded bg-[#fbeae6] px-2 py-0.5 text-[#bd5739]">{f.available_quantity} remaining</span>
+                <div className="mt-3 flex gap-2 text-xs font-bold">
+                  <span className="rounded bg-[#f0e8dc] px-2 py-0.5 text-[#8e7b68]">{f.total_quantity} total</span>
+                  <span className="rounded bg-[#eaf2ec] px-2 py-0.5 text-[#26735a]">{f.ordered_today || 0} ordered</span>
+                  <span className="rounded bg-[#fbeae6] px-2 py-0.5 text-[#bd5739]">{f.remaining_today || 0} remaining</span>
                 </div>
               </div>
             </div>
@@ -994,6 +997,21 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [pendingRegistrationsCount, setPendingRegistrationsCount] = useState(0);
   const [highlightOrderId, setHighlightOrderId] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+
+  const deleteSelectedOrders = async () => {
+    if (selectedOrderIds.length === 0) return;
+    if (!confirm(`Are you sure you want to completely delete ${selectedOrderIds.length} order(s)? This action cannot be undone.`)) return;
+    setUpdating("delete");
+    const { error } = await supabase.from("orders").delete().in("id", selectedOrderIds);
+    if (error) {
+      alert("Error deleting orders: " + error.message);
+    } else {
+      setSelectedOrderIds([]);
+      await fetchOrders(selectedDate);
+    }
+    setUpdating(null);
+  };
 
   const globalPendingCount = pendingOrdersCount + pendingEventsCount + pendingRegistrationsCount;
 
@@ -1025,7 +1043,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   }, [allOrders.length]); // Re-run when orders are loaded
 
   const fetchOrders = async (date: string) => {
-    const { data } = await supabase.from("orders").select("*, items:order_items(*, foods(available_quantity))").eq("pickup_date", date).order("created_at", { ascending: false });
+    const { data } = await supabase.from("orders").select("*, items:order_items(*, foods_daily(available_quantity))").eq("pickup_date", date).order("created_at", { ascending: false });
     if (data) {
       const mapped: Order[] = data.map((o: any) => ({
         id: o.id,
@@ -1035,6 +1053,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
         status: o.order_status,
         pickupTime: o.pickup_time,
         pickupToken: o.order_number,
+        orderDate: o.order_date ? new Date(o.order_date).toLocaleDateString("en-GB").replace(/\//g, "-") : new Date(o.created_at).toLocaleDateString("en-GB").replace(/\//g, "-"),
         placedAt: new Date(o.created_at).toLocaleTimeString(),
         recipientName: o.recipient_name,
         recipientPhone: o.recipient_phone,
@@ -1045,7 +1064,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
           name: i.food_name,
           price: i.price,
           quantity: i.quantity,
-          availableQuantity: i.foods?.available_quantity ?? 0,
+          availableQuantity: i.foods_daily?.available_quantity ?? 0,
           image: "" 
         }))
       }));
@@ -1220,6 +1239,18 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
   };
   
   const filteredOrders = allOrders.filter(o => filter === "all" ? true : o.status === filter);
+  
+  const allFilteredOrderIds = filteredOrders.map(o => o.id);
+  const isAllSelected = allFilteredOrderIds.length > 0 && selectedOrderIds.length === allFilteredOrderIds.length;
+  
+  const toggleSelectAll = () => {
+    if (isAllSelected) setSelectedOrderIds([]);
+    else setSelectedOrderIds(allFilteredOrderIds);
+  };
+
+  const toggleSelectOrder = (id: string) => {
+    setSelectedOrderIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
 
   const foodSummary = useMemo(() => {
     const summary: Record<string, number> = {};
@@ -1342,31 +1373,64 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <div className="flex flex-wrap gap-2">
-            {["all", "accepted", "cancelled"].map(f => (
-              <button 
-                key={f} 
-                onClick={() => setFilter(f as Status | "all")} 
-                className={`rounded-xl border px-3 py-1.5 text-xs font-bold capitalize transition ${filter === f ? "border-[#173f37] bg-[#173f37] text-white" : "border-[#e3d7c5] bg-transparent text-[#846d55] hover:border-[#bd5739]"}`}
-              >
-                {f}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap gap-2">
+              {["all", "accepted", "cancelled"].map(f => (
+                <button 
+                  key={f} 
+                  onClick={() => setFilter(f as Status | "all")} 
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-bold capitalize transition ${filter === f ? "border-[#173f37] bg-[#173f37] text-white" : "border-[#e3d7c5] bg-transparent text-[#846d55] hover:border-[#bd5739]"}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            {filteredOrders.length > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-[#294b41] ml-2 bg-white px-3 py-1.5 rounded-xl border border-[#e3d7c5]">
+                <input type="checkbox" className="size-4" checked={isAllSelected} onChange={toggleSelectAll} />
+                Select All
+              </label>
+            )}
           </div>
+          
+          {selectedOrderIds.length > 0 && (
+            <button onClick={deleteSelectedOrders} disabled={updating === "delete"} className="rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-200 transition">
+              {updating === "delete" ? "Deleting..." : `Delete Selected (${selectedOrderIds.length})`}
+            </button>
+          )}
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-8">
           {filteredOrders.length === 0 ? (
             <Empty title="No orders found" copy="No orders match the current filter." />
           ) : (
-            filteredOrders.map((o) => (
-              <div key={o.id} className="relative flex flex-col gap-5 rounded-2xl border border-[#e3d7c5] bg-white p-5 shadow-warm-sm transition-opacity" style={{ opacity: updating === o.id ? 0.5 : 1 }}>
-                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+            (() => {
+              const grouped = filteredOrders.reduce((acc, order) => {
+                const session = order.pickupTime || "Unspecified Session";
+                if (!acc[session]) acc[session] = [];
+                acc[session].push(order);
+                return acc;
+              }, {} as Record<string, typeof filteredOrders>);
+              
+              return Object.entries(grouped).map(([session, sessionOrders]) => (
+                <div key={session} className="space-y-4">
+                  <div className="bg-[#173f37] text-white p-4 rounded-xl shadow-md w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span className="font-bold text-lg text-[#f6cb63]">📅 {new Date(selectedDate).toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    <span className="font-mono-brand text-sm tracking-wider">Session: {formatTimeRange(session)}</span>
+                  </div>
+                  <div className="space-y-4">
+                    {sessionOrders.map((o) => (
+                      <div key={o.id} className={`relative flex flex-col gap-5 rounded-2xl border ${selectedOrderIds.includes(o.id) ? 'border-[#ea6b42] bg-[#fffaf0]' : 'border-[#e3d7c5] bg-white'} p-5 shadow-warm-sm transition-opacity`} style={{ opacity: updating === o.id ? 0.5 : 1 }}>
+                        <div className="absolute top-4 right-4 sm:top-5 sm:right-5">
+                          <input type="checkbox" className="size-5 cursor-pointer accent-[#ea6b42]" checked={selectedOrderIds.includes(o.id)} onChange={() => toggleSelectOrder(o.id)} />
+                        </div>
+                        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start pr-8">
                   <div>
                     <div className="flex items-center gap-3">
                       <span className="font-mono-brand text-lg font-bold text-[#bd5739]">#{o.pickupToken}</span>
                       <StatusPill status={o.status} />
                     </div>
+                    <span className="text-[11px] font-bold text-[#a08870] mt-1 block">Order Date: {o.orderDate}</span>
                     <div className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[#a08870]">Ordered By</p>
@@ -1430,7 +1494,11 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
                   )}
                 </div>
               </div>
-            ))
+            ))}
+            </div>
+            </div>
+          ));
+          })()
           )}
         </div>
       </section>
@@ -1550,9 +1618,15 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
       )}
 
       {activeTab === "celebrations" && (
-        <section className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5 animate-rise">
-          <h2 className="font-display text-2xl mb-4">Manage Celebration Items</h2>
-          <AdminCelebrationItems />
+        <section className="animate-rise space-y-6">
+          <div className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5">
+            <h2 className="font-display text-2xl mb-4">Manage Celebration Items</h2>
+            <AdminCelebrationItems />
+          </div>
+          <div className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5">
+            <h2 className="font-display text-2xl mb-4">Manage Cake Configs</h2>
+            <AdminCakeConfigs />
+          </div>
         </section>
       )}
 
@@ -1741,6 +1815,10 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
@@ -1790,11 +1868,14 @@ function App() {
         const newStatus = payload.new.canteen_status as "OPEN" | "CLOSED";
         setCanteenStatus(newStatus);
         
-        if (profile?.role === 'student' && !window.location.pathname.startsWith('/admin')) {
+        if (!window.location.pathname.startsWith('/admin')) {
           playNotificationSound();
           const title = newStatus === 'OPEN' ? '🔔 Canteen Open' : '🔔 Canteen Closed';
           const desc = newStatus === 'OPEN' ? 'Canteen is now open.' : 'Canteen is now closed.';
           toast.success(title, { description: desc, duration: 6000 });
+          if (Notification.permission === "granted") {
+            new Notification(title, { body: desc, icon: '/favicon.ico' });
+          }
         }
       }).subscribe();
       
@@ -1804,7 +1885,7 @@ function App() {
   }, [profile?.role]);
 
   useEffect(() => {
-    supabase.from("foods").select("*")
+    supabase.from("foods_daily").select("*")
       .then(({ data, error }) => {
         if (error) {
           setError(error.message);
