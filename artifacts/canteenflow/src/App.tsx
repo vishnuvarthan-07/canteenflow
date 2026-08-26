@@ -4,7 +4,7 @@ import {
   Home as HomeIcon, LogOut, Minus, PackageCheck, PartyPopper, Plus, QrCode,
   ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Soup, Star,
   Store, Ticket, Timer, Trash2, UserRound, WalletCards, Zap, Cake, FileText, X,
-  MapPin, Info, Flame, History, Users, UserPlus
+  MapPin, Info, Flame, History, Users, UserPlus, Phone
 } from "lucide-react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import NotFound from "@/pages/not-found";
@@ -25,7 +25,7 @@ type CartLine = Pick<Food, "id" | "name" | "price" | "image" | "category" | "ava
 type OrderItem = Omit<CartLine, "category">;
 type Status = "placed" | "accepted" | "completed" | "cancelled" | "rejected";
 type Order = { id: string; items: OrderItem[]; total: number; status: Status; pickupTime: string; pickupToken: string; placedAt: string; customerName?: string; customerPhone?: string; recipientName?: string; recipientPhone?: string; recipientHostel?: string; deliveryAddress?: string; };
-type DbPickupSlot = { id: string; slot_type: "DAILY" | "CUSTOM"; slot_name: string | null; slot_date: string | null; start_time: string; end_time: string; is_active: boolean; created_at: string; };
+export type DbPickupSlot = { id: string; slot_type: "DAILY" | "CUSTOM"; slot_name: string | null; slot_date: string | null; start_time: string; end_time: string; is_active: boolean; created_at: string; };
 export type Notice = { id: string; recipient_id: string | null; recipient_role: string; order_id: string | null; title: string; message: string; notification_type: string; is_read: boolean; created_at: string };
 type DbOrder = { id: string; customer_name: string; customer_phone: string; total_amount: number; order_status: "placed" | "accepted" | "completed" | "cancelled" | "rejected"; pickup_time: string; payment_status: "pending" | "paid" | "failed"; created_at: string; rejection_reason?: string | null; };
 type DbOrderItem = { id: string; order_id: string; food_id: string; food_name: string; quantity: number; price: number; subtotal: number; };
@@ -114,8 +114,8 @@ export const formatTimeRange = (range: string) => {
   if (!range) return "";
   return range.split(" - ").map(t => format12Hour(t.trim())).join(" - ");
 };
-const readStore = <T,>(key: string, fallback: T): T => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) as T : fallback; } catch { return fallback; } };
-const usePersisted = <T,>(key: string, fallback: T) => {
+export const readStore = <T,>(key: string, fallback: T): T => { try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) as T : fallback; } catch { return fallback; } };
+export const usePersisted = <T,>(key: string, fallback: T) => {
   const [value, setValue] = useState<T>(() => readStore(key, fallback));
   useEffect(() => localStorage.setItem(key, JSON.stringify(value)), [key, value]);
   return [value, setValue] as const;
@@ -155,9 +155,9 @@ function StatusPill({ status }: { status: string }) {
   const colors: Record<string, string> = { placed: "bg-[#f6ead0] text-[#8b6528]", accepted: "bg-[#dceee5] text-[#26735a]", completed: "bg-[#e6e0d8] text-[#716252]", cancelled: "bg-[#f6dfd9] text-[#ae4735]", rejected: "bg-[#f6dfd9] text-[#ae4735]" };
   return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${colors[status] ?? colors.placed}`}>{labels[status] ?? status}</span>;
 }
-function Shell({ children, cartCount, unreadCount, canteenStatus }: { children: ReactNode; cartCount: number; unreadCount: number; canteenStatus?: "OPEN" | "CLOSED" }) {
+function Shell({ children, cartCount, unreadCount, canteenStatus, settings }: { children: ReactNode; cartCount: number; unreadCount: number; canteenStatus?: "OPEN" | "CLOSED"; settings?: any; }) {
   const [location] = useLocation();
-  const links = [{ href: "/", label: "Home", icon: HomeIcon }, { href: "/menu", label: "Menu", icon: Soup }, { href: "/events", label: "Events", icon: PartyPopper }, { href: "/orders", label: "Orders", icon: ReceiptText }, { href: "/notifications", label: "Alerts", icon: Bell }];
+  const links = [{ href: "/", label: "Home", icon: HomeIcon }, { href: "/menu", label: "Menu", icon: Soup }, { href: "/events", label: "Events", icon: PartyPopper }, { href: "/orders", label: "Orders", icon: ReceiptText }, { href: "/contact", label: "Contact", icon: Phone }, { href: "/notifications", label: "Alerts", icon: Bell }];
   return <div className="grain min-h-[100dvh] bg-[#f7f0e5]"><aside className="fixed inset-y-0 left-0 z-30 hidden w-[236px] flex-col bg-[#173f37] px-5 py-6 text-[#fff8e8] lg:flex"><Link href="/" className="flex items-center gap-2.5"><span className="grid size-9 place-items-center rounded-[11px] bg-[#f6cb63] text-[#173f37]"><Soup size={19} /></span><span className="text-[19px] font-bold">Canteen<span className="text-[#f6cb63]">Flow</span></span></Link><div className="mt-12 rounded-2xl border border-white/10 bg-white/[.07] p-4"><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.13em] text-[#f6cb63]"><Zap size={14} fill="currentColor" /> Live canteen</div><p className="mt-2 text-sm leading-5 text-[#d2e1d7]">Pickup is moving fast today. Order before the next bell.</p></div><nav className="mt-8 space-y-1.5">{links.map(({ href, label, icon: Icon }) => <Link href={href} key={href} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${location === href ? "bg-[#f6cb63] text-[#173f37]" : "text-[#d2e1d7] hover:bg-white/10"}`}><Icon size={18} />{label}{label === "Alerts" && unreadCount > 0 && <span className="ml-auto grid size-5 place-items-center rounded-full bg-[#ea6b42] text-[10px]">{unreadCount}</span>}</Link>)}</nav><div className="mt-auto space-y-1.5"><Link href="/profile" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-[#d2e1d7]"><UserRound size={18} /> Profile</Link></div></aside><header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-[#e3d7c5] bg-[#f7f0e5]/95 px-5 backdrop-blur lg:ml-[236px] lg:px-10"><div className="lg:hidden"><Link href="/" className="font-bold text-[#173f37]">Canteen<span className="text-[#e9653d]">Flow</span></Link></div><div className="hidden text-sm capitalize text-[#88735d] lg:block">{location === "/" ? "Tuesday, 18 June" : location.replace("/", "").replace("-", " ")}</div><div className="ml-auto flex items-center gap-2.5"><Link href="/notifications" className="rounded-xl p-2 lg:hidden"><Bell size={19} /></Link><Link href="/cart" className="relative flex items-center gap-2 rounded-xl bg-[#173f37] px-3.5 py-2.5 text-sm font-bold text-[#fff8e8]"><ShoppingBag size={17} /><span className="hidden sm:inline">Your tray</span>{cartCount > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#f6cb63] text-[10px] text-[#173f37]">{cartCount}</span>}</Link></div></header><main className="pb-24 lg:ml-[236px] lg:pb-10">
     {canteenStatus === "CLOSED" ? (
       <div className="bg-red-600 text-white px-5 py-2.5 text-center text-sm font-bold">
@@ -195,7 +195,10 @@ function AdminShell({ children, activeTab, setActiveTab, counts }: { children: R
         <button onClick={() => setActiveTab("requests")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "requests" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
           Registration Requests
         </button>
-        <div className="pt-4 mt-4 border-t border-white/10 space-y-1.5">
+                <button onClick={() => setActiveTab("contact")} className={`w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left font-bold ${activeTab === "contact" ? "bg-white text-[#ea6b42] shadow-sm" : "text-[#7b614b] hover:bg-[#e4d7c6]"}`}>
+          Contact & Hero
+        </button>
+<div className="pt-4 mt-4 border-t border-white/10 space-y-1.5">
           <button onClick={() => supabase.auth.signOut()} className="w-full rounded-xl px-3 py-3 text-sm font-bold text-[#d2e1d7] hover:bg-white/10 flex items-center gap-3 text-left"><LogOut size={18} /> Sign Out</button>
         </div>
       </nav>
@@ -274,8 +277,8 @@ function AdminShell({ children, activeTab, setActiveTab, counts }: { children: R
 </div>;
 }
 export function PageIntro({ eyebrow, title, sub }: { eyebrow?: string; title: string; sub?: string }) { return <div className="mb-7 animate-rise">{eyebrow && <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.17em] text-[#bb6a42]"><span className="h-px w-5 bg-[#bb6a42]" />{eyebrow}</div>}<h1 className="font-display text-[clamp(2.35rem,5vw,4rem)] leading-[.94] tracking-[-.045em] text-[#24493f]">{title}</h1>{sub && <p className="mt-3 max-w-xl text-[15px] leading-6 text-[#7a6651]">{sub}</p>}</div>; }
-function Empty({ title, copy, action }: { title: string; copy: string; action?: ReactNode }) { return <div className="rounded-2xl border border-dashed border-[#d8c7b1] bg-[#fbf3e7] px-6 py-12 text-center"><div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-[#f6cb63]/35 text-[#9b632e]"><Soup size={22} /></div><h3 className="font-display text-2xl text-[#294b41]">{title}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-[#8a745e]">{copy}</p>{action && <div className="mt-5">{action}</div>}</div>; }
-function useCart() {
+export function Empty({ title, copy, action }: { title: string; copy: string; action?: ReactNode }) { return <div className="rounded-2xl border border-dashed border-[#d8c7b1] bg-[#fbf3e7] px-6 py-12 text-center"><div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-[#f6cb63]/35 text-[#9b632e]"><Soup size={22} /></div><h3 className="font-display text-2xl text-[#294b41]">{title}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-[#8a745e]">{copy}</p>{action && <div className="mt-5">{action}</div>}</div>; }
+export function useCart() {
   const [cart, setCart] = usePersisted<CartLine[]>("canteenflow-cart", []);
   const add = (food: Food) => setCart((current) => { 
     const found = current.find((line) => line.id === food.id); 
@@ -309,7 +312,7 @@ function FoodCard({ item, onAdd, onOrderNow }: { item: Food; onAdd: () => void; 
   const isOutOfStock = item.availableQuantity === 0;
   return <article className="group overflow-hidden rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] shadow-warm-sm transition hover:-translate-y-1 hover:shadow-warm"><Link href={`/menu/${item.id}`} className="block"><div className="relative"><FoodVisual item={item} className="h-40 transition duration-500 group-hover:scale-[1.03]" />{item.isPopular && <span className="absolute left-3 top-3 rounded-full bg-[#f6cb63] px-2.5 py-1 text-[10px] font-bold uppercase">Popular</span>}{!item.isAvailable && <span className="absolute inset-0 grid place-items-center bg-[#173f37]/65 text-sm font-bold text-white">Sold out for now</span>}{item.isAvailable && isOutOfStock && <span className="absolute inset-0 grid place-items-center bg-[#bd5739]/80 text-sm font-bold text-white backdrop-blur-sm">OUT OF STOCK</span>}{item.isAvailable && !isOutOfStock && item.availableQuantity <= 5 && <span className="absolute right-3 top-3 rounded-full bg-[#ea6b42] px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-sm">Low Stock</span>}</div></Link><div className="p-4"><div className="flex items-start justify-between gap-3"><Link href={`/menu/${item.id}`}><h3 className="font-bold text-[#294b41]">{item.name}</h3><p className="mt-1 line-clamp-1 text-xs text-[#8b735d]">{item.description}</p></Link><span className="font-mono-brand whitespace-nowrap text-sm font-bold text-[#bd5739]">{money(item.price)}</span></div><div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-[#92775b] font-bold">Available: {item.availableQuantity}</span><div className="flex gap-2">{onOrderNow && <Button disabled={!item.isAvailable || isOutOfStock} onClick={onOrderNow} variant="outline" className="px-3 py-2 text-xs">{isOutOfStock ? "SOLD OUT" : "Order Now"}</Button>}<Button disabled={!item.isAvailable || isOutOfStock} onClick={onAdd} className="px-3 py-2 text-xs">{isOutOfStock ? "SOLD OUT" : <><Plus size={15} /> Add</>}</Button></div></div></div></article>;
 }
-function Home({ cart, foods }: { cart: ReturnType<typeof useCart>; foods: Food[] }) {
+function Home({ cart, foods, settings }: { cart: ReturnType<typeof useCart>; foods: Food[]; settings?: any; }) {
   const [, navigate] = useLocation();
   const popular = foods.filter((item) => item.isPopular);
   
@@ -317,7 +320,7 @@ function Home({ cart, foods }: { cart: ReturnType<typeof useCart>; foods: Food[]
     return <div className="py-12"><Empty title="No food items are currently available" copy="Please check back later when the canteen is restocked." action={<Button variant="outline" onClick={() => window.location.reload()}>Refresh</Button>} /></div>;
   }
 
-  return <div className="space-y-12"><section className="relative overflow-hidden rounded-[28px] bg-[#173f37] px-6 py-10 text-[#fff8e8] shadow-warm lg:px-12 lg:py-14"><div className="absolute -right-20 -top-28 size-[330px] rounded-full border-[42px] border-[#f6cb63]/20" /><div className="relative max-w-[670px] animate-rise"><div className="mb-4 inline-flex rounded-full border border-[#f6cb63]/30 bg-[#f6cb63]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[.14em] text-[#f6cb63]">Straight from the hostel canteen</div><h1 className="font-display text-[clamp(3.4rem,7vw,6.8rem)] leading-[.86]">Skip the queue.<br /><em className="text-[#f6cb63]">Keep the good mood.</em></h1><p className="mt-6 max-w-[480px] text-[16px] leading-7 text-[#d5e3d9]">Your favourite canteen plates, ordered before the bell rings. Pick a window, walk in, walk out.</p><Link href="/menu" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#f6cb63] px-5 py-3 text-sm font-bold text-[#173f37]">Start an order <ChevronRight size={16} /></Link></div></section><section className="grid gap-4 sm:grid-cols-3">{[{ icon: CalendarClock, title: "Choose your window", copy: "Claim a real pickup time, not a vague ETA." }, { icon: Ticket, title: "Get a tiny token", copy: "One code gets your plate moving at the counter." }, { icon: PackageCheck, title: "Track the handoff", copy: "Know when it is cooking, ready, and yours." }].map(({ icon: Icon, title, copy }) => <div key={title} className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5 shadow-warm-sm"><div className="mb-5 grid size-10 place-items-center rounded-xl bg-[#f6cb63]/35 text-[#9a622c]"><Icon size={19} /></div><h2 className="font-bold text-[#294b41]">{title}</h2><p className="mt-1.5 text-sm leading-5 text-[#88735d]">{copy}</p></div>)}</section><section><div className="mb-5 flex items-end justify-between"><div><div className="mb-2 text-[11px] font-bold uppercase tracking-[.17em] text-[#bb6a42]">On the counter today</div><h2 className="font-display text-4xl text-[#24493f]">Popular with your hostel</h2></div><Link href="/menu" className="text-sm font-bold text-[#c65d3c]">See full menu <ChevronRight size={16} /></Link></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{popular.map((item) => <FoodCard key={item.id} item={item} onAdd={() => cart.add(item)} onOrderNow={() => { cart.clear(); cart.add(item); navigate('/checkout'); }} />)}</div></section></div>;
+  return <div className="space-y-12"><section className="relative overflow-hidden rounded-[28px] bg-[#173f37] px-6 py-10 text-[#fff8e8] shadow-warm lg:px-12 lg:py-14" style={settings?.hero_image ? { backgroundImage: `linear-gradient(rgba(23, 63, 55, 0.85), rgba(23, 63, 55, 0.95)), url(${settings.hero_image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}><div className="absolute -right-20 -top-28 size-[330px] rounded-full border-[42px] border-[#f6cb63]/20" /><div className="relative max-w-[670px] animate-rise"><div className="mb-4 inline-flex rounded-full border border-[#f6cb63]/30 bg-[#f6cb63]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[.14em] text-[#f6cb63]">{settings?.hero_badge || "Straight from the hostel canteen"}</div><h1 className="font-display text-[clamp(3.4rem,7vw,6.8rem)] leading-[.86]">{settings?.hero_title || "Skip the queue."}<br /><em className="text-[#f6cb63]">{settings?.hero_highlight || "Keep the good mood."}</em></h1><p className="mt-6 max-w-[480px] text-[16px] leading-7 text-[#d5e3d9]">{settings?.hero_description || "Your favourite canteen plates, ordered before the bell rings. Pick a window, walk in, walk out."}</p><Link href={settings?.hero_button_link || "/menu"} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#f6cb63] px-5 py-3 text-sm font-bold text-[#173f37]">{settings?.hero_button_text || "Start an order"} <ChevronRight size={16} /></Link></div></section><section className="grid gap-4 sm:grid-cols-3">{[{ icon: CalendarClock, title: "Choose your window", copy: "Claim a real pickup time, not a vague ETA." }, { icon: Ticket, title: "Get a tiny token", copy: "One code gets your plate moving at the counter." }, { icon: PackageCheck, title: "Track the handoff", copy: "Know when it is cooking, ready, and yours." }].map(({ icon: Icon, title, copy }) => <div key={title} className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5 shadow-warm-sm"><div className="mb-5 grid size-10 place-items-center rounded-xl bg-[#f6cb63]/35 text-[#9a622c]"><Icon size={19} /></div><h2 className="font-bold text-[#294b41]">{title}</h2><p className="mt-1.5 text-sm leading-5 text-[#88735d]">{copy}</p></div>)}</section><section><div className="mb-5 flex items-end justify-between"><div><div className="mb-2 text-[11px] font-bold uppercase tracking-[.17em] text-[#bb6a42]">On the counter today</div><h2 className="font-display text-4xl text-[#24493f]">Popular with your hostel</h2></div><Link href="/menu" className="text-sm font-bold text-[#c65d3c]">See full menu <ChevronRight size={16} /></Link></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{popular.map((item) => <FoodCard key={item.id} item={item} onAdd={() => cart.add(item)} onOrderNow={() => { cart.clear(); cart.add(item); navigate('/checkout'); }} />)}</div></section></div>;
 }
 function MenuPage({ cart, foods }: { cart: ReturnType<typeof useCart>; foods: Food[] }) {
   const [, navigate] = useLocation();
@@ -979,7 +982,7 @@ function ManageFoods() {
   );
 }
 
-function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
+function AdminPage({ canteenStatus, settings, setSettings }: { canteenStatus?: "OPEN" | "CLOSED"; settings?: any; setSettings?: any; }) {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
 
@@ -1430,7 +1433,7 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
                       <span className="font-mono-brand text-lg font-bold text-[#bd5739]">#{o.pickupToken}</span>
                       <StatusPill status={o.status} />
                     </div>
-                    <span className="text-[11px] font-bold text-[#a08870] mt-1 block">Order Date: {o.orderDate}</span>
+                    <span className="text-[11px] font-bold text-[#a08870] mt-1 block">Order Date: {(o as any).orderDate}</span>
                     <div className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[#a08870]">Ordered By</p>
@@ -1643,6 +1646,14 @@ function AdminPage({ canteenStatus }: { canteenStatus?: "OPEN" | "CLOSED" }) {
           <AdminRegistrationRequests />
         </section>
       )}
+      {activeTab === "contact" && (
+        <section className="animate-rise space-y-6">
+          <div className="rounded-2xl border border-[#e3d7c5] bg-[#fffaf0] p-5">
+            <h2 className="font-display text-2xl mb-4">Contact & Hero Settings</h2>
+            <AdminSettings currentSettings={settings} onSaved={setSettings} />
+          </div>
+        </section>
+      )}
     </AdminShell>
   );
 }
@@ -1738,7 +1749,7 @@ function AdminRegistrationRequests() {
   );
 }
 
-function Router({ profile, foods, cart, eventCart, notices, setNotices, canteenStatus }: { profile: any; foods: Food[]; cart: ReturnType<typeof useCart>; eventCart: ReturnType<typeof useEventCart>; notices: Notice[]; setNotices: React.Dispatch<React.SetStateAction<Notice[]>>; canteenStatus?: "OPEN" | "CLOSED" }) { 
+function Router({ profile, foods, cart, eventCart, notices, setNotices, canteenStatus, settings, setSettings }: { profile: any; foods: Food[]; cart: ReturnType<typeof useCart>; eventCart: ReturnType<typeof useEventCart>; notices: Notice[]; setNotices: React.Dispatch<React.SetStateAction<Notice[]>>; canteenStatus?: "OPEN" | "CLOSED"; settings?: any; setSettings?: any; }) { 
   const [location, navigate] = useLocation();
 
   useEffect(() => {
@@ -1783,7 +1794,7 @@ function Router({ profile, foods, cart, eventCart, notices, setNotices, canteenS
   }, [profile.id, setNotices]);
 
   return <Switch>
-    <Route path="/"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><Home cart={cart} foods={foods} /></Shell></Route>
+    <Route path="/"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus} settings={settings}><Home cart={cart} foods={foods} settings={settings} /></Shell></Route>
     <Route path="/menu"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><MenuPage cart={cart} foods={foods} /></Shell></Route>
     <Route path="/menu/:foodId"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><FoodDetails cart={cart} foods={foods} /></Shell></Route>
     <Route path="/cart"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><CartPage cart={cart} /></Shell></Route>
@@ -1796,11 +1807,14 @@ function Router({ profile, foods, cart, eventCart, notices, setNotices, canteenS
     <Route path="/events"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><EventBookingIntro /></Shell></Route>
     <Route path="/events/book"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><EventBookingWizard eventCart={eventCart} foods={foods} /></Shell></Route>
     <Route path="/events/my-bookings"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><MyEventBookingsPage /></Shell></Route>
-    <Route path="/admin"><AdminPage canteenStatus={canteenStatus} /></Route>
+    <Route path="/admin"><AdminPage canteenStatus={canteenStatus} settings={settings} setSettings={setSettings} /></Route>
+    <Route path="/contact"><Shell cartCount={cart.count} unreadCount={notices.filter((n) => !n.is_read).length} canteenStatus={canteenStatus}><ContactPage /></Shell></Route>
     <Route component={NotFound} />
   </Switch>; 
 }
 import { AuthPage, PendingApprovalPage, RejectedPage } from "./AuthPage";
+import { ContactPage } from "./ContactPage";
+import { AdminSettings } from "./AdminSettings";
 
 function App() { 
   const cart = useCart(); 
@@ -1808,6 +1822,7 @@ function App() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
   const [canteenStatus, setCanteenStatus] = useState<"OPEN" | "CLOSED">("OPEN");
+  const [settings, setSettings] = useState<any>(null);
   
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -1859,8 +1874,11 @@ function App() {
   }, [session?.user?.id]);
 
   useEffect(() => {
-    supabase.from("canteen_settings").select("canteen_status").eq("id", 1).single().then(({ data }) => {
-      if (data) setCanteenStatus(data.canteen_status as "OPEN" | "CLOSED");
+    supabase.from("canteen_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
+      if (data) {
+        setCanteenStatus(data.canteen_status as "OPEN" | "CLOSED");
+        setSettings(data);
+      }
     });
     
     const channel = supabase.channel('public:canteen_settings')
@@ -1939,6 +1957,6 @@ function App() {
     }
   }
 
-  return <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}><ErrorBoundary><Router profile={profile} foods={foods} cart={cart} eventCart={eventCart} notices={notices} setNotices={setNotices} canteenStatus={canteenStatus} /></ErrorBoundary></WouterRouter>; 
+  return <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}><ErrorBoundary><Router profile={profile} foods={foods} cart={cart} eventCart={eventCart} notices={notices} setNotices={setNotices} canteenStatus={canteenStatus} settings={settings} setSettings={setSettings} /></ErrorBoundary></WouterRouter>; 
 }
 export default App;
