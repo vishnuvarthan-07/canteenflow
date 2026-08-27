@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Image as ImageIcon, Loader2 } from "lucide-react";
 import { AdminPaymentSettings } from "./AdminPaymentSettings";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/lib/cropImage";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function AdminSettings({ currentSettings, onSaved }: { currentSettings: any; onSaved?: (updated: any) => void }) {
   const [loading, setLoading] = useState(false);
@@ -32,6 +35,12 @@ export function AdminSettings({ currentSettings, onSaved }: { currentSettings: a
 
   const [heroImage, setHeroImage] = useState<File | null>(null);
   const [heroImagePreview, setHeroImagePreview] = useState<string | null>(null);
+
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [rawImageFileUrl, setRawImageFileUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentSettings) {
@@ -68,8 +77,29 @@ export function AdminSettings({ currentSettings, onSaved }: { currentSettings: a
         toast.error("Image must be less than 5MB");
         return;
       }
-      setHeroImage(file);
-      setHeroImagePreview(URL.createObjectURL(file));
+      setRawImageFileUrl(URL.createObjectURL(file));
+      setIsCropModalOpen(true);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      e.target.value = "";
+    }
+  };
+
+  const onCropComplete = (_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const applyCrop = async () => {
+    try {
+      if (!rawImageFileUrl || !croppedAreaPixels) return;
+      const croppedImage = await getCroppedImg(rawImageFileUrl, croppedAreaPixels, 0);
+      if (croppedImage) {
+        setHeroImage(croppedImage);
+        setHeroImagePreview(URL.createObjectURL(croppedImage));
+        setIsCropModalOpen(false);
+      }
+    } catch (e: any) {
+      toast.error("Failed to crop image", { description: e.message });
     }
   };
 
@@ -244,6 +274,43 @@ export function AdminSettings({ currentSettings, onSaved }: { currentSettings: a
          <AdminPaymentSettings currentSettings={currentSettings} />
       </div>
 
+      {/* Crop Modal */}
+      <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Crop Hero Image</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[450px] w-full bg-black/5 rounded-xl overflow-hidden mt-4">
+            {rawImageFileUrl && (
+              <Cropper
+                image={rawImageFileUrl}
+                crop={crop}
+                zoom={zoom}
+                aspect={16 / 9}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            )}
+          </div>
+          <div className="flex flex-col gap-2 mt-4">
+            <label className="text-xs font-bold text-[#8a745e]">Zoom</label>
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full accent-[#ea6b42]"
+            />
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button onClick={() => setIsCropModalOpen(false)} className="rounded-xl px-4 py-2 font-bold text-[#8a745e] hover:bg-[#f7f0e5]">Cancel</button>
+            <button onClick={applyCrop} className="rounded-xl bg-[#ea6b42] px-4 py-2 font-bold text-white hover:bg-[#c65d3c]">Apply Crop</button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
